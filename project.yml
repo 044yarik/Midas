@@ -1,0 +1,61 @@
+name: MIDAS
+options:
+  bundleIdPrefix: com.midas
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+targets:
+  MIDAS:
+    type: application
+    platform: iOS
+    sources:
+      - path: .
+        includes:
+          - CategoryPickerSheet.swift
+          - HomeView.swift
+          - MIDASApp.swift
+          - ReceiptScanner.swift
+          - ReportsView.swift
+          - SettingsView.swift
+          - Theme.swift
+          - Intents.swift
+          - Models.swift
+    info:
+      path: Info-App.plist
+      properties:
+        CFBundleDisplayName: MIDAS
+        UILaunchScreen: {}
+        NSSupportsLiveActivities: true
+        NSCameraUsageDescription: Нужна для сканирования чеков
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.midas.app
+        GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      - target: MIDASWidget
+  MIDASWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: .
+        includes:
+          - ExpenseLiveActivity.swift
+          - Intents.swift
+          - Models.swift
+    info:
+      path: Info-Widget.plist
+      properties:
+        CFBundleDisplayName: MIDAS
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.midas.app.widget
+        GENERATE_INFOPLIST_FILE: NO
