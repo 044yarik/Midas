@@ -59,7 +59,7 @@ struct SetCategoryIntent: LiveActivityIntent {
         PaymentPrompt.assign(expenseID: expenseID, categoryName: categoryName)
         for activity in Activity<ExpenseActivityAttributes>.activities where activity.attributes.expenseID == expenseID {
             let done = ActivityContent(
-                state: .init(options: [], chosen: categoryName),
+                state: ExpenseActivityAttributes.ContentState(options: [], chosen: categoryName),
                 staleDate: nil)
             await activity.end(done, dismissalPolicy: .after(.now + 3))
         }
