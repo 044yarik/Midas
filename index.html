@@ -77,6 +77,42 @@ textarea.bk{width:100%;height:110px;background:#0d0d0f;border:1px solid var(--li
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translate(-50%,-140%);background:#2c2c30;border:1px solid var(--line);border-radius:999px;padding:12px 18px;z-index:100;transition:transform .3s;font-size:14px;font-weight:600;max-width:92%;text-align:center}
 .toast.on{transform:translate(-50%,0)}
 .install{background:var(--card2)}
+/* ---------- Liquid Glass ---------- */
+:root{--glass:rgba(255,255,255,.075);--glass-hi:rgba(255,255,255,.16);--edge:rgba(255,255,255,.17);--blur:blur(22px) saturate(180%)}
+html{background:#000}
+body{background:transparent}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(55% 38% at 12% 6%,rgba(227,176,75,.38),transparent 70%),
+  radial-gradient(50% 36% at 95% 28%,rgba(10,132,255,.30),transparent 70%),
+  radial-gradient(60% 40% at 25% 70%,rgba(191,90,242,.22),transparent 70%),
+  radial-gradient(55% 35% at 85% 98%,rgba(52,199,89,.20),transparent 70%),#000}
+.card,.pill,.chips button,.tabs,.search,.ghost,.cats button,.toast,.sheet header button,.inp.amt{
+  background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.04) 55%,rgba(255,255,255,.07));
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 -1px 0 rgba(255,255,255,.05),inset 1px 0 0 rgba(255,255,255,.08),0 10px 30px rgba(0,0,0,.30)}
+.inp.amt{border:0;box-shadow:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.card{border-radius:30px}
+.chips button[aria-pressed="true"]{background:linear-gradient(160deg,rgba(255,255,255,.30),rgba(255,255,255,.12))}
+.cats button[aria-pressed="true"]{border:2px solid var(--c);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 45%,transparent),color-mix(in srgb,var(--c) 16%,transparent))}
+.tabs{background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.05));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 0 rgba(255,255,255,.06),0 14px 40px rgba(0,0,0,.45)}
+.tabs button[aria-current="true"]{background:linear-gradient(160deg,rgba(255,255,255,.28),rgba(255,255,255,.10));box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.cta,.fab{
+  background:linear-gradient(165deg,rgba(255,224,150,.98),rgba(227,176,75,.92) 50%,rgba(196,140,40,.92));
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),inset 0 -2px 6px rgba(120,70,0,.28),0 12px 30px rgba(227,176,75,.28),0 6px 18px rgba(0,0,0,.4)}
+.cta[disabled]{opacity:.4}
+.sheet{background:linear-gradient(180deg,rgba(60,60,70,.62),rgba(22,22,26,.78));-webkit-backdrop-filter:blur(40px) saturate(170%);backdrop-filter:blur(40px) saturate(170%);border:1px solid var(--edge);border-bottom:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 -20px 60px rgba(0,0,0,.5)}
+.sheet .card{background:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.03))}
+.toast{background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.08))}
+.dim{background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.code,textarea.bk{background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+select.pick{background:linear-gradient(160deg,rgba(255,255,255,.2),rgba(255,255,255,.07));border:1px solid var(--edge)}
+.bar{background:rgba(255,255,255,.12)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .card,.pill,.chips button,.tabs,.search,.ghost,.cats button,.toast{background:#1d1d21}
+  .sheet{background:#161618}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -85,7 +121,10 @@ textarea.bk{width:100%;height:110px;background:#0d0d0f;border:1px solid var(--li
   <div class="view" id="v-home">
     <div class="topbar">
       <div class="pill">▭ Добавить счёт</div>
-      <button class="pill" id="open-settings" type="button" aria-label="Настройки">UAH &nbsp;⚙︎</button>
+      <div class="row" style="gap:8px">
+        <button class="pill" id="open-cur" type="button" aria-label="Валюта"><span id="cur-code">UAH</span> <span class="muted">▾</span></button>
+        <button class="pill" id="open-settings" type="button" aria-label="Настройки">⚙︎</button>
+      </div>
     </div>
     <h1 class="t">Финансы</h1>
     <div class="chips" id="chips"></div>
@@ -95,6 +134,7 @@ textarea.bk{width:100%;height:110px;background:#0d0d0f;border:1px solid var(--li
       <button class="ghost" id="install-x" type="button">Понятно</button>
     </div>
     <div class="card"><div class="muted" id="sum-label"></div><div class="big" id="sum"></div><div class="sub" id="sum-n"></div></div>
+    <div class="sub" id="rate-warn" hidden style="padding:0 8px;color:#ffb340">Нет курсов валют, траты в других валютах пока не пересчитаны. Откройте приложение с интернетом.</div>
     <div class="card" id="pending" hidden></div>
     <div class="card" id="bycat"></div>
     <div class="card" id="buys"></div>
@@ -133,7 +173,7 @@ textarea.bk{width:100%;height:110px;background:#0d0d0f;border:1px solid var(--li
     <div class="note" id="pk-note" hidden></div>
     <div class="card">
       <input class="inp" id="pk-m" placeholder="Магазин" aria-label="Магазин" autocomplete="off">
-      <div class="row"><input class="inp amt" id="pk-a" inputmode="decimal" placeholder="0,00" aria-label="Сумма" autocomplete="off"><b style="font-size:38px">₴</b></div>
+      <div class="row"><input class="inp amt" id="pk-a" inputmode="decimal" placeholder="0,00" aria-label="Сумма" autocomplete="off"><button class="pill" type="button" id="pk-sym" style="font-size:26px;font-weight:700;padding:8px 16px" aria-label="Валюта траты">₴</button></div>
     </div>
     <div class="card"><h3>Категория</h3><div class="cats" id="pk-cats"></div></div>
     <button class="cta" id="pk-save" type="button" disabled>Сохранить</button>
@@ -164,9 +204,24 @@ textarea.bk{width:100%;height:110px;background:#0d0d0f;border:1px solid var(--li
       <div class="row"><button class="ghost" id="bk-make" type="button">Показать копию</button><button class="ghost" id="bk-copy" type="button">Копировать</button></div>
       <button class="ghost" id="bk-restore" type="button">Восстановить из текста выше</button>
     </div>
-    <div class="card"><div class="row"><span class="grow">Версия</span><span class="muted">1.0</span></div></div>
+    <div class="card">
+      <h3>Курсы валют</h3>
+      <div class="sub" id="rates-info"></div>
+      <button class="ghost" id="rates-refresh" type="button">Обновить курсы</button>
+      <div class="sub">Курсы обновляются сами раз в 6 часов. Источник: open.er-api.com. Старые траты пересчитываются по текущему курсу.</div>
+    </div>
+    <div class="card"><div class="row"><span class="grow">Версия</span><span class="muted">1.1</span></div></div>
     <button class="ghost danger" id="set-clear" type="button">🗑 &nbsp;Очистить историю</button>
     <div class="card" id="clear-confirm" hidden><b>Удалить все траты?</b><div class="sub">Это нельзя отменить.</div><div class="row"><button class="ghost" id="clear-no" type="button">Отмена</button><button class="ghost danger" id="clear-yes" type="button">Удалить</button></div></div>
+  </div>
+</section>
+
+<section class="sheet" id="sh-cur" aria-label="Валюта">
+  <header><span style="width:78px"></span><span>Валюта</span><button type="button" id="cur-done">Готово</button></header>
+  <div class="body">
+    <input class="search" id="cur-q" placeholder="Название или код: USD, злотый…" aria-label="Поиск валюты" autocomplete="off">
+    <div class="sub" id="cur-note"></div>
+    <div class="card" id="cur-list"></div>
   </div>
 </section>
 
@@ -181,7 +236,12 @@ var MONTHS=['янв.','февр.','март','апр.','май','июнь','ию
 var NOW=new Date();
 var $=function(s){return document.querySelector(s)};
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function fmt(n){return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₴'}
+var nfCache={};
+function nfFor(c){if(!(c in nfCache)){try{nfCache[c]=new Intl.NumberFormat('ru-RU',{style:'currency',currency:c,currencyDisplay:'narrowSymbol'})}catch(e){nfCache[c]=null}}return nfCache[c]}
+function fmtIn(n,c){var f=nfFor(c);return f?f.format(n):n.toFixed(2)+' '+c}
+function fmt(n){return fmtIn(n,S.cur||'UAH')}
+function symOf(c){var f=nfFor(c);if(!f)return c;var p=f.formatToParts(0);for(var i=0;i<p.length;i++)if(p[i].type==='currency')return p[i].value;return c}
+function sym(){return symOf(S.cur||'UAH')}
 function mk(d){return d.getFullYear()*12+d.getMonth()}
 function dstr(d){return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' г.'}
 function catOf(n){for(var i=0;i<CATS.length;i++)if(CATS[i].n===n)return CATS[i];return null}
@@ -191,10 +251,31 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 
 /* ---------- хранилище: сохраняется после каждого изменения ---------- */
 var S=load();
-function load(){try{var r=JSON.parse(localStorage.getItem(KEY));if(r&&Array.isArray(r.ex))return r}catch(e){}return {v:1,ex:[]}}
+function load(){try{var r=JSON.parse(localStorage.getItem(KEY));if(r&&Array.isArray(r.ex))return r}catch(e){}return {v:1,ex:[],cur:'UAH'}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){toast('Не удалось сохранить: нет места или запрещено');return false}}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
-function list(){return S.ex.map(function(e){return {id:e.id,m:e.m,a:e.a,d:new Date(e.d),n:e.n||1,cat:e.cat||null,src:e.src}})}
+if(!S.cur)S.cur='UAH';
+S.ex.forEach(function(e){if(!e.cur)e.cur=S.cur});
+
+/* ---------- курсы валют (кэш в телефоне, обновление раз в 6 часов) ---------- */
+var RATES=null;
+try{var rc=JSON.parse(localStorage.getItem('midas.rates'));if(rc&&rc.r&&rc.t)RATES=rc}catch(e){}
+function convert(a,from,to){if(from===to)return a;if(!RATES||!RATES.r[from]||!RATES.r[to])return null;return a/RATES.r[from]*RATES.r[to]}
+function ratesTime(){return RATES?new Date(RATES.t).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'нет данных'}
+function setRates(r){RATES={t:Date.now(),r:r};try{localStorage.setItem('midas.rates',JSON.stringify(RATES))}catch(e){}}
+function fetchRates(force){
+  if(!force&&RATES&&Date.now()-RATES.t<6*36e5)return Promise.resolve();
+  return fetch('https://open.er-api.com/v6/latest/USD').then(function(r){return r.json()}).then(function(j){
+    if(!j||j.result!=='success'||!j.rates)throw 0;setRates(j.rates)
+  }).catch(function(){
+    return fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@1/v1/currencies/usd.json').then(function(r){return r.json()}).then(function(j){
+      var o={};Object.keys(j.usd||{}).forEach(function(k){o[k.toUpperCase()]=j.usd[k]});if(!o.UAH)throw 0;setRates(o)
+    })
+  }).then(function(){render();updRatesUI();if(force)toast('Курсы обновлены')}).catch(function(){if(force)toast('Не удалось получить курсы. Проверьте интернет.')});
+}
+function updRatesUI(){var el=$('#rates-info');if(el)el.textContent='Обновлено: '+ratesTime()}
+function list(){var d=S.cur||'UAH';return S.ex.map(function(e){var oc=e.cur||d,v=convert(e.a,oc,d);return {id:e.id,m:e.m,a:v===null?e.a:v,oa:e.a,oc:oc,conv:v!==null,d:new Date(e.d),n:e.n||1,cat:e.cat||null,src:e.src}})}
+function orig(e){return e.oc!==(S.cur||'UAH')?' · '+fmtIn(e.oa,e.oc):''}
 
 var period='this',tab='home',selMonth=mk(NOW),q='',pk=null;
 
@@ -207,7 +288,10 @@ function inPeriod(e){
 function ico(c,size){return '<div class="ico" style="'+(size?'width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*.48)+'px;':'')+'background:'+(c?c.c+'40':'#3a3a3f')+'">'+(c?c.e:'❓')+'</div>'}
 
 function render(){
-  var all=list(),ex=all.filter(inPeriod).sort(function(a,b){return b.d-a.d});
+  $('#cur-code').textContent=S.cur||'UAH';
+  var all=list();
+  $('#rate-warn').hidden=!all.some(function(e){return !e.conv});
+  var ex=all.filter(inPeriod).sort(function(a,b){return b.d-a.d});
   var total=ex.reduce(function(s,e){return s+e.a},0);
   $('#sum-label').textContent=period==='this'?'В этом месяце вы потратили':'Вы потратили';
   $('#sum').textContent=fmt(total);
@@ -219,7 +303,7 @@ function render(){
   var sums={};ex.forEach(function(e){if(e.cat)sums[e.cat]=(sums[e.cat]||0)+e.a});
   var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a]});
   $('#bycat').innerHTML='<h3>По категориям</h3>'+(keys.length?keys.map(function(k){var c=catOf(k)||CATS[7];return '<div><div class="row"><span class="grow">'+c.e+' '+esc(k)+'</span><span class="num">'+fmt(sums[k])+'</span></div><div class="bar"><i style="width:'+(total?sums[k]/total*100:0)+'%;background:'+c.c+'"></i></div></div>'}).join(''):'<div class="muted">Пока пусто. Нажмите «Добавить расход» или кнопку сканера.</div>');
-  $('#buys').innerHTML='<h3>Покупки · '+ex.length+'</h3>'+(ex.length?ex.map(function(e){var c=e.cat?catOf(e.cat):null;return '<button class="item" type="button" data-edit="'+e.id+'">'+ico(c)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+dstr(e.d)+' · '+e.n+' поз.</span></div><span class="num">'+fmt(e.a)+'</span></button>'}).join(''):'<div class="muted">Трат за этот период нет</div>');
+  $('#buys').innerHTML='<h3>Покупки · '+ex.length+'</h3>'+(ex.length?ex.map(function(e){var c=e.cat?catOf(e.cat):null;return '<button class="item" type="button" data-edit="'+e.id+'">'+ico(c)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+dstr(e.d)+' · '+e.n+' поз.'+orig(e)+'</span></div><span class="num">'+fmt(e.a)+'</span></button>'}).join(''):'<div class="muted">Трат за этот период нет</div>');
   renderReports();renderSearch();
 }
 function renderReports(){
@@ -240,7 +324,7 @@ function renderReports(){
 function renderSearch(){
   var t=q.trim().toLowerCase();
   var r=list().filter(function(e){return !t||e.m.toLowerCase().indexOf(t)>-1||(e.cat&&e.cat.toLowerCase().indexOf(t)>-1)}).sort(function(a,b){return b.d-a.d});
-  $('#results').innerHTML=r.length?r.map(function(e){var c=e.cat?catOf(e.cat):null;return '<button class="item" type="button" data-edit="'+e.id+'">'+ico(c,44)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+dstr(e.d)+'</span></div><span class="num">'+fmt(e.a)+'</span></button>'}).join(''):'<div class="muted">Ничего не найдено</div>';
+  $('#results').innerHTML=r.length?r.map(function(e){var c=e.cat?catOf(e.cat):null;return '<button class="item" type="button" data-edit="'+e.id+'">'+ico(c,44)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+dstr(e.d)+orig(e)+'</span></div><span class="num">'+fmt(e.a)+'</span></button>'}).join(''):'<div class="muted">Ничего не найдено</div>';
 }
 
 /* ---------- навигация и события ---------- */
@@ -254,7 +338,7 @@ document.addEventListener('click',function(ev){
   if(t.dataset.tab)setTab(t.dataset.tab);
   if(t.dataset.period){period=t.dataset.period;render()}
   if(t.dataset.month){selMonth=+t.dataset.month;renderReports()}
-  if(t.dataset.edit){var e=list().find(function(x){return x.id===t.dataset.edit});if(e)openPicker({id:e.id,m:e.m,a:e.a,n:e.n,cat:e.cat,src:e.src,d:e.d})}
+  if(t.dataset.edit){var e=list().find(function(x){return x.id===t.dataset.edit});if(e)openPicker({id:e.id,m:e.m,a:e.oa,cur:e.oc,n:e.n,cat:e.cat,src:e.src,d:e.d})}
 });
 document.addEventListener('change',function(ev){
   var s=ev.target;if(s.dataset&&s.dataset.pick&&s.value){
@@ -276,11 +360,11 @@ function pickAmt(){var v=parseFloat($('#pk-a').value.replace(/\s/g,'').replace('
 function drawCats(){$('#pk-cats').innerHTML=CATS.map(function(c){return '<button type="button" data-pc="'+esc(c.n)+'" style="--c:'+c.c+'" aria-pressed="'+(pk&&pk.cat===c.n)+'"><span>'+c.e+'</span><span>'+c.n+'</span></button>'}).join('')}
 function checkPick(){$('#pk-save').disabled=!(pickAmt()&&pk&&pk.cat)}
 function openPicker(o,note){
-  pk={id:o.id||null,cat:o.cat||null,n:o.n||1,src:o.src||'manual',d:o.d||null};
+  pk={id:o.id||null,cat:o.cat||null,n:o.n||1,src:o.src||'manual',d:o.d||null,cur:o.cur||S.cur||'UAH'};
   $('#pk-title').textContent=o.id?'Изменить трату':'Новая трата';
   $('#pk-m').value=o.m||'';$('#pk-a').value=o.a?String(Number(o.a).toFixed(2)).replace('.',','):'';
   var n=$('#pk-note');n.hidden=!note;n.textContent=note||'';
-  $('#pk-del').hidden=!o.id;
+  $('#pk-del').hidden=!o.id;$('#pk-sym').textContent=symOf(pk.cur);
   drawCats();checkPick();sheet('#sh-pick',true);
 }
 $('#pk-cats').addEventListener('click',function(e){var b=e.target.closest('[data-pc]');if(!b||!pk)return;pk.cat=b.dataset.pc;drawCats();checkPick()});
@@ -288,15 +372,16 @@ $('#pk-a').oninput=checkPick;
 $('#pk-save').onclick=function(){
   if(!pk)return;var a=pickAmt();if(!a||!pk.cat)return;
   var m=$('#pk-m').value.trim()||'Без названия';
-  if(pk.id){var e=S.ex.find(function(x){return x.id===pk.id});if(e){e.m=m;e.a=a;e.cat=pk.cat}}
-  else S.ex.push({id:uid(),m:m,a:a,d:new Date().toISOString(),n:pk.n,cat:pk.cat,src:pk.src});
+  if(pk.id){var e=S.ex.find(function(x){return x.id===pk.id});if(e){e.m=m;e.a=a;e.cat=pk.cat;e.cur=pk.cur}}
+  else S.ex.push({id:uid(),m:m,a:a,cur:pk.cur,d:new Date().toISOString(),n:pk.n,cat:pk.cat,src:pk.src});
   save();closeAll();period='this';render();toast('Сохранено');
 };
 $('#pk-del').onclick=function(){if(!pk||!pk.id)return;S.ex=S.ex.filter(function(x){return x.id!==pk.id});save();closeAll();render();toast('Удалено')};
 
 /* ---------- настройки ---------- */
 var payUrl=location.origin+location.pathname+'?amount=СУММА&merchant=МАГАЗИН';
-$('#open-settings').onclick=function(){$('#pay-link').textContent=payUrl;sheet('#sh-set',true)};
+$('#open-settings').onclick=function(){$('#pay-link').textContent=payUrl;updRatesUI();sheet('#sh-set',true)};
+$('#rates-refresh').onclick=function(){fetchRates(true)};
 function copyText(t,okMsg){
   function fb(){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);toast(ok?okMsg:'Выделите текст и скопируйте вручную')}
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(function(){toast(okMsg)},fb);else fb();
@@ -306,13 +391,46 @@ $('#bk-make').onclick=function(){$('#bk').value=JSON.stringify(S)};
 $('#bk-copy').onclick=function(){if(!$('#bk').value)$('#bk').value=JSON.stringify(S);copyText($('#bk').value,'Копия скопирована')};
 $('#bk-restore').onclick=function(){
   try{var r=JSON.parse($('#bk').value);if(!r||!Array.isArray(r.ex))throw 0;
-    S={v:1,ex:r.ex.filter(function(e){return e&&e.id&&e.a>0&&e.d}).map(function(e){return {id:String(e.id),m:String(e.m||'Без названия'),a:+e.a,d:String(e.d),n:+e.n||1,cat:e.cat||null,src:e.src||'manual'}})};
+    S={v:1,cur:r.cur||S.cur||'UAH',ex:r.ex.filter(function(e){return e&&e.id&&e.a>0&&e.d}).map(function(e){return {id:String(e.id),m:String(e.m||'Без названия'),a:+e.a,cur:e.cur||r.cur||'UAH',d:String(e.d),n:+e.n||1,cat:e.cat||null,src:e.src||'manual'}})};
     save();render();toast('Восстановлено: '+S.ex.length+' трат')}
   catch(e){toast('Это не похоже на копию MIDAS')}
 };
 $('#set-clear').onclick=function(){$('#clear-confirm').hidden=false;$('#clear-confirm').scrollIntoView({block:'nearest'})};
 $('#clear-no').onclick=function(){$('#clear-confirm').hidden=true};
-$('#clear-yes').onclick=function(){S={v:1,ex:[]};save();render();closeAll();toast('История очищена')};
+$('#clear-yes').onclick=function(){S={v:1,ex:[],cur:S.cur||'UAH'};save();render();closeAll();toast('История очищена')};
+
+/* ---------- выбор валюты ---------- */
+var CUR_LIST=null;
+function curList(){
+  if(CUR_LIST)return CUR_LIST;
+  var codes;try{codes=Intl.supportedValuesOf('currency')}catch(e){codes=['UAH','USD','EUR','GBP','PLN','CZK','CHF','JPY','CNY','CAD','AUD','TRY','KZT','GEL','MDL','RON','HUF','SEK','NOK','DKK','AED','ILS','INR','BRL','MXN','BGN','RSD','AZN','AMD','UZS']}
+  var dn=null;try{dn=new Intl.DisplayNames(['ru'],{type:'currency'})}catch(e){}
+  var top=['UAH','USD','EUR','PLN','GBP','CZK','CHF','TRY','GEL','KZT','MDL','RON'];
+  CUR_LIST=codes.map(function(c){var n=c;try{if(dn)n=dn.of(c)||c}catch(e){}return {c:c,n:n}});
+  CUR_LIST.sort(function(a,b){var ia=top.indexOf(a.c),ib=top.indexOf(b.c);if(ia>-1||ib>-1)return (ia>-1?ia:99)-(ib>-1?ib:99);return a.n.localeCompare(b.n,'ru')});
+  return CUR_LIST;
+}
+function renderCur(){
+  var t=$('#cur-q').value.trim().toLowerCase();
+  var r=curList().filter(function(x){return !t||x.c.toLowerCase().indexOf(t)>-1||x.n.toLowerCase().indexOf(t)>-1});
+  var curNow=(curMode==='expense'&&pk)?pk.cur:(S.cur||'UAH');
+  $('#cur-list').innerHTML=r.length?r.map(function(x){var on=x.c===curNow;return '<button class="item" type="button" data-cur="'+x.c+'" style="padding:8px 0"><span class="num" style="width:48px">'+x.c+'</span><span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.n)+'</span><span style="color:var(--accent)">'+(on?'✓':'')+'</span></button>'}).join(''):'<div class="muted">Такой валюты нет</div>';
+}
+var curMode='display';
+function openCur(){
+  $('#cur-q').value='';
+  $('#cur-note').textContent=curMode==='display'?'Все суммы пересчитываются по курсу в выбранную валюту.':'Валюта этой траты. В итогах она пересчитается по курсу.';
+  renderCur();sheet('#sh-cur',true);fetchRates();
+}
+$('#open-cur').onclick=function(){curMode='display';openCur()};
+$('#pk-sym').onclick=function(){curMode='expense';openCur()};
+$('#cur-done').onclick=function(){if(curMode==='expense')sheet('#sh-cur',false);else closeAll()};
+$('#cur-q').oninput=renderCur;
+$('#cur-list').addEventListener('click',function(e){
+  var b=e.target.closest('[data-cur]');if(!b)return;
+  if(curMode==='expense'&&pk){pk.cur=b.dataset.cur;$('#pk-sym').textContent=symOf(pk.cur);sheet('#sh-cur',false);return}
+  S.cur=b.dataset.cur;save();render();closeAll();toast('Валюта: '+S.cur);
+});
 
 /* ---------- скан чека (OCR в браузере) ---------- */
 var TOTAL_KEYS=['до сплати','сума','разом','всього','итого','всего','total','к оплате','до оплати'];
@@ -353,11 +471,18 @@ $('#file').onchange=function(){
 (function(){
   var p=new URLSearchParams(location.search);
   if(!p.has('amount'))return;
-  var a=parseAmount(p.get('amount')),m=(p.get('merchant')||'').trim(),c=catLoose(p.get('cat'));
+  var rawAmt=p.get('amount'),a=parseAmount(rawAmt),m=(p.get('merchant')||'').trim(),c=catLoose(p.get('cat'));
+  var cc=(p.get('currency')||'').toUpperCase().trim();
+  function known(x){return curList().some(function(i){return i.c===x})}
+  if(!known(cc)){
+    cc=null;var mm=String(rawAmt||'').match(/\b([A-Z]{3})\b/);if(mm&&known(mm[1]))cc=mm[1];
+    if(!cc){var map={'₴':'UAH','грн':'UAH','$':'USD','€':'EUR','£':'GBP','zł':'PLN','Kč':'CZK','₺':'TRY','₾':'GEL'};for(var k in map)if(String(rawAmt).indexOf(k)>-1){cc=map[k];break}}
+  }
+  cc=cc||S.cur||'UAH';
   try{history.replaceState(null,'',location.pathname)}catch(e){}
   if(!a){toast('Не получилось прочитать сумму из оплаты');return}
-  if(c){S.ex.push({id:uid(),m:m||'Apple Pay',a:a,d:new Date().toISOString(),n:1,cat:c.n,src:'applepay'});save();toast('Добавлено: '+c.e+' '+c.n)}
-  else setTimeout(function(){openPicker({m:m||'Apple Pay',a:a,n:1,src:'applepay'},'💳 Оплата Apple Pay. Выберите категорию.')},50);
+  if(c){S.ex.push({id:uid(),m:m||'Apple Pay',a:a,cur:cc,d:new Date().toISOString(),n:1,cat:c.n,src:'applepay'});save();toast('Добавлено: '+c.e+' '+c.n)}
+  else setTimeout(function(){openPicker({m:m||'Apple Pay',a:a,cur:cc,n:1,src:'applepay'},'💳 Оплата Apple Pay. Выберите категорию.')},50);
 })();
 
 /* ---------- подсказка про экран «Домой» ---------- */
@@ -370,7 +495,7 @@ $('#file').onchange=function(){
 
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(function(){})}
 
-setTab('home');render();
+setTab('home');render();fetchRates();
 })();
 </script>
 </body>
