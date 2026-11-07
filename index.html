@@ -54,7 +54,7 @@ h1.t{font-size:34px;margin:6px 0 0;letter-spacing:-.01em}
 select.pick{background:var(--card2);color:var(--accent);border:0;border-radius:999px;padding:8px 10px;font-size:14px;max-width:150px}
 .fab{position:fixed;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 92px);width:66px;height:66px;border-radius:50%;background:var(--accent);color:var(--on);display:grid;place-items:center;z-index:20;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;gap:2px;background:rgba(37,41,48,.96);border-radius:999px;padding:6px;z-index:20;box-shadow:0 6px 22px rgba(0,0,0,.35)}
-.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 15px;border-radius:999px;font-size:11px;color:var(--muted)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 9px;border-radius:999px;font-size:10.5px;color:var(--muted)}
 .tabs button span.i{font-size:20px;line-height:1}
 .tabs button[aria-current="true"]{background:var(--bg);color:var(--fg)}
 .search,.inp{background:var(--card);border:0;border-radius:999px;padding:14px 18px;outline:none;width:100%}
@@ -104,6 +104,20 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
 .card .tagchip{background:var(--card2);color:var(--fg)}
 .irow .item .sub{white-space:normal}
 .tagchip:active{background:var(--card2)}
+.lb{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#3a3f46;font-size:12px;font-weight:700;vertical-align:-5px;margin-right:2px}
+.chatlist{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:12px 14px;border-radius:18px;line-height:1.45;font-size:15px;overflow-wrap:anywhere}
+.msg.u{align-self:flex-end;background:var(--accent);color:var(--on);border-bottom-right-radius:6px}
+.msg.a{align-self:flex-start;background:var(--card);border-bottom-left-radius:6px}
+.msg.pend{color:var(--muted)}
+.composer{position:fixed;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:496px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);display:flex;gap:8px;z-index:21}
+.composer input{flex:1;min-width:0;background:#262a31;border:0;border-radius:999px;padding:14px 18px;outline:none;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.composer button{width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--on);font-size:22px;font-weight:700;flex:0 0 auto}
+.composer button[disabled]{opacity:.4}
+.kb .tabs{display:none}
+.kb .composer{bottom:calc(env(safe-area-inset-bottom,0px) + 10px)}
+.chips-col{display:flex;flex-direction:column;gap:8px}
+.chips-col .tagchip{text-align:left;white-space:normal}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -157,6 +171,14 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
     <button class="cta" id="sub-add" type="button">＋ &nbsp;Добавить подписку</button>
   </div>
 
+  <div class="view" id="v-chat" hidden>
+    <div style="text-align:center;font-weight:700;padding-top:6px">Помощник</div>
+    <div class="sub" id="chat-mode" style="text-align:center"></div>
+    <div class="chatlist" id="chat-list"></div>
+    <div class="card" id="chat-hints"><h3>Можно спросить</h3><div class="chips-col" id="chat-chips"></div><div class="sub">Помощник считает по вашим записям в MIDAS. Накопления и остатки на счетах он не знает, их можно указать в вопросе.</div></div>
+    <button class="ghost" id="chat-clear" type="button" hidden>Очистить чат</button>
+  </div>
+
   <div class="view" id="v-search" hidden>
     <div style="text-align:center;font-weight:700;padding-top:6px">Поиск</div>
     <input class="search" id="q" placeholder="Магазин, категория, заметка или #тег" aria-label="Поиск">
@@ -165,6 +187,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
   </div>
 </div>
 
+<form class="composer" id="composer" hidden autocomplete="off"><input id="chat-in" type="text" placeholder="Спросите про свои финансы" aria-label="Вопрос помощнику" enterkeyhint="send"><button id="chat-send" type="button" aria-label="Отправить">↑</button></form>
 <button class="fab" id="fab" type="button" aria-label="Сканировать чек">
   <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/></svg>
 </button>
@@ -175,6 +198,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
   <button type="button" data-tab="rep"><span class="i">▥</span><span>Отчёты</span></button>
   <button type="button" data-tab="subs"><span class="i">↻</span><span>Подписки</span></button>
   <button type="button" data-tab="search"><span class="i">⌕</span><span>Поиск</span></button>
+  <button type="button" data-tab="chat"><span class="i">✦</span><span>Помощник</span></button>
 </nav>
 
 <div class="dim" id="dim"></div>
@@ -184,6 +208,15 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
   <div class="body">
     <div class="card"><div class="row"><span class="grow">⊕ &nbsp;Доходы</span><button class="sw" id="set-income" role="switch" aria-checked="false" aria-label="Доходы" type="button"></button></div><div class="sub">Включите, чтобы вести доходы и видеть баланс.</div></div>
     <div class="card"><div class="row"><span class="grow">↻ &nbsp;Подписки и регулярные платежи</span><button class="ghost" id="set-subs" type="button" style="width:auto;padding:10px 16px">Открыть</button></div></div>
+    <div class="card">
+      <h3>✦ ИИ-помощник</h3>
+      <div class="sub" id="ai-status"></div>
+      <div class="sub">Без ключа помощник отвечает на типовые вопросы встроенными расчётами и работает без интернета. С ключом Claude он понимает любые вопросы о ваших тратах.</div>
+      <input class="search" id="ai-key" type="password" placeholder="Ключ API (sk-ant-…)" aria-label="Ключ API" autocomplete="off">
+      <select class="pick" id="ai-model" aria-label="Модель" style="max-width:none;width:100%;padding:12px"><option value="claude-sonnet-5-5">Claude Sonnet 5.5, точнее</option><option value="claude-haiku-5-5">Claude Haiku 5.5, дешевле и быстрее</option></select>
+      <div class="row"><button class="ghost" id="ai-save" type="button">Сохранить ключ</button><button class="ghost" id="ai-del" type="button">Удалить ключ</button></div>
+      <div class="sub">Ключ создаётся в console.anthropic.com → API Keys. Он хранится только на этом телефоне и не попадает в резервную копию. Запросы оплачиваются с вашего аккаунта Anthropic. Когда помощник отвечает с ИИ, ваши траты (суммы, магазины, заметки) отправляются в Anthropic. Не вводите ключ на чужих устройствах.</div>
+    </div>
     <div class="card">
       <h3>💳 Apple Pay</h3>
       <div class="sub">После оплаты откроется MIDAS с суммой и магазином, останется нажать на категорию.</div>
@@ -210,7 +243,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
       <div class="row"><button class="ghost" id="bk-make" type="button">Показать копию</button><button class="ghost" id="bk-copy" type="button">Копировать</button></div>
       <button class="ghost" id="bk-restore" type="button">Восстановить из текста выше</button>
     </div>
-    <div class="card"><div class="row"><span class="grow">Версия</span><span class="muted">2.1</span></div></div>
+    <div class="card"><div class="row"><span class="grow">Версия</span><span class="muted">2.2</span></div></div>
     <button class="ghost danger" id="set-clear" type="button">🗑 &nbsp;Очистить историю</button>
     <div class="card" id="clear-confirm" hidden><b>Удалить все записи?</b><div class="sub">Повторяющиеся платежи останутся. Отменить нельзя.</div><div class="row"><button class="ghost" id="clear-no" type="button">Отмена</button><button class="ghost danger" id="clear-yes" type="button">Удалить</button></div></div>
   </div>
@@ -252,6 +285,11 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
       <div class="sub" id="sb-hint"></div>
     </div>
     <div class="card"><h3>Категория</h3><div class="cats" id="sb-cats"></div></div>
+    <div class="card">
+      <div class="row"><div id="sb-ico"></div><div class="grow"><b>Значок</b><div class="sub">Загрузите свою картинку, например значок приложения, сохранённый в «Фото».</div></div></div>
+      <div class="row"><button class="ghost" id="sb-img-pick" type="button">Выбрать картинку</button><button class="ghost" id="sb-img-del" type="button">Убрать</button></div>
+      <input type="file" id="sb-img-file" accept="image/*" hidden>
+    </div>
     <button class="cta" id="sb-save" type="button" disabled>Сохранить подписку</button>
     <button class="ghost danger" id="sb-del" type="button" hidden>Удалить подписку</button>
   </div>
@@ -321,7 +359,7 @@ function fetchRates(force){
   }).then(function(){render();updRatesUI();if(force)toast('Курсы обновлены')}).catch(function(){if(force)toast('Не удалось получить курсы. Проверьте интернет.')});
 }
 function updRatesUI(){var el=$('#rates-info');if(el)el.textContent='Обновлено: '+ratesTime()}
-function list(){var d=S.cur||'UAH';return S.ex.map(function(e){var oc=e.cur||d,v=convert(e.a,oc,d);return {id:e.id,m:e.m,a:v===null?e.a:v,oa:e.a,oc:oc,conv:v!==null,d:new Date(e.d),n:e.n||1,cat:e.cat||null,src:e.src,type:e.type||'out',note:e.note||''}})}
+function list(){var d=S.cur||'UAH';return S.ex.map(function(e){var oc=e.cur||d,v=convert(e.a,oc,d);return {id:e.id,m:e.m,a:v===null?e.a:v,oa:e.a,oc:oc,conv:v!==null,d:new Date(e.d),n:e.n||1,cat:e.cat||null,src:e.src,type:e.type||'out',note:e.note||'',recId:e.recId}})}
 function orig(e){return e.oc!==(S.cur||'UAH')?' · '+fmtIn(e.oa,e.oc):''}
 
 /* ---------- повторяющиеся платежи ---------- */
@@ -342,7 +380,7 @@ function runRecurring(){
   if(added)save();
   return added;
 }
-var PRESETS=[{m:'Spotify',ic:'🎵',cat:'Развлечения'},{m:'Netflix',ic:'🎬',cat:'Развлечения'},{m:'YouTube Premium',ic:'▶️',cat:'Развлечения'},{m:'iCloud',ic:'🍎',cat:'Другое'},{m:'Google One',ic:'☁️',cat:'Другое'},{m:'Telegram Premium',ic:'✈️',cat:'Другое'},{m:'Интернет',ic:'📶',cat:'Дом'},{m:'Телефон',ic:'📱',cat:'Дом'},{m:'Аренда',ic:'🏠',cat:'Дом'},{m:'Спортзал',ic:'🏋️',cat:'Здоровье'}];
+var PRESETS=[{m:'Spotify',cat:'Развлечения'},{m:'Netflix',cat:'Развлечения'},{m:'YouTube Premium',cat:'Развлечения'},{m:'iCloud',cat:'Другое'},{m:'Google One',cat:'Другое'},{m:'Telegram Premium',cat:'Другое'},{m:'Интернет',ic:'📶',cat:'Дом'},{m:'Телефон',ic:'📱',cat:'Дом'},{m:'Аренда',ic:'🏠',cat:'Дом'},{m:'Спортзал',ic:'🏋️',cat:'Здоровье'}];
 function perTxt(r){return r.per==='y'?'раз в год':'каждый месяц'}
 function nextCharge(r){
   var from=Math.max(r.startKey,r.last!=null?r.last+1:r.startKey);
@@ -360,11 +398,11 @@ function renderSubs(){
   var m=act.reduce(function(s,r){return s+monthlyEq(r)},0);
   $('#subs-m').textContent=fmt(m);
   $('#subs-y').textContent='≈ '+fmt(m*12)+' в год · активных: '+act.length;
-  $('#subs-presets').innerHTML=PRESETS.map(function(p,i){return '<button class="tagchip" type="button" data-preset="'+i+'">'+p.ic+' '+esc(p.m)+'</button>'}).join('');
+  $('#subs-presets').innerHTML=PRESETS.map(function(p,i){return '<button class="tagchip" type="button" data-preset="'+i+'">'+(p.ic?p.ic:'<span class="lb">'+esc(p.m.charAt(0).toUpperCase())+'</span>')+' '+esc(p.m)+'</button>'}).join('');
   var L=S.rec.slice().sort(function(a,b){var na=nextCharge(a),nb=nextCharge(b);return (a.paused?1:0)-(b.paused?1:0)||(na&&nb?na-nb:0)});
   $('#subs-list').innerHTML=L.length?L.map(function(r){
-    var c=catOf(r.cat),nx=nextCharge(r);
-    return '<div class="row irow"><button class="item" type="button" data-subedit="'+r.id+'" style="flex:1;min-width:0;width:auto;opacity:'+(r.paused?.5:1)+'"><div class="ico" style="width:44px;height:44px;font-size:22px;background:'+(c?c.c+'33':'#3a3f46')+'">'+(r.ic||(c?c.e:'🔁'))+'</div><div class="grow"><b>'+esc(r.m)+'</b><span class="sub">'+(r.paused?'Приостановлена':'Дальше: '+(nx?dayWord(nx):'—'))+' · '+perTxt(r)+'</span></div><span class="num'+(r.type==='in'?' pos':'')+'">'+(r.type==='in'?'+':'')+fmtIn(r.a,r.cur)+'</span></button><button class="sw" type="button" role="switch" data-subpause="'+r.id+'" aria-checked="'+(!r.paused)+'" aria-label="Подписка активна"></button></div>';
+    var nx=nextCharge(r);
+    return '<div class="row irow"><button class="item" type="button" data-subedit="'+r.id+'" style="flex:1;min-width:0;width:auto;opacity:'+(r.paused?.5:1)+'">'+subIcon(r,44)+'<div class="grow"><b>'+esc(r.m)+'</b><span class="sub">'+(r.paused?'Приостановлена':'Дальше: '+(nx?dayWord(nx):'—'))+' · '+perTxt(r)+'</span></div><span class="num'+(r.type==='in'?' pos':'')+'">'+(r.type==='in'?'+':'')+fmtIn(r.a,r.cur)+'</span></button><button class="sw" type="button" role="switch" data-subpause="'+r.id+'" aria-checked="'+(!r.paused)+'" aria-label="Подписка активна"></button></div>';
   }).join(''):'<div class="muted">Пока нет подписок. Нажмите на сервис ниже или «Добавить подписку».</div>';
 }
 function dIn(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
@@ -382,9 +420,10 @@ function sbHint(){
   }
   $('#sb-hint').textContent=h;
 }
+function sbIcon(){if(sb)$('#sb-ico').innerHTML=subIcon({m:$('#sb-m').value||'?',cat:sb.cat,ic:sb.ic,img:sb.img},52)}
 function openSub(o){
   o=o||{};
-  sb={id:o.id||null,cat:o.cat||null,cur:o.cur||S.cur||'UAH',per:o.per||'m',type:o.type||'out',ic:o.ic||null};
+  sb={id:o.id||null,cat:o.cat||null,cur:o.cur||S.cur||'UAH',per:o.per||'m',type:o.type||'out',ic:o.ic||null,img:o.img||null};
   $('#sb-title').textContent=o.id?'Изменить подписку':'Новая подписка';
   $('#sb-m').value=o.m||'';
   $('#sb-a').value=o.a?String(Number(o.a).toFixed(2)).replace('.',','):'';
@@ -395,7 +434,7 @@ function openSub(o){
   $('#sb-date').value=dIn(o.date||new Date());
   $('#sb-date-l').textContent=o.id?'Следующее списание':'Дата первого списания';
   $('#sb-del').hidden=!o.id;
-  sbDrawCats();sbCheck();sbHint();sheet('#sh-sub',true);
+  sbDrawCats();sbCheck();sbHint();sbIcon();sheet('#sh-sub',true);
 }
 
 /* ---------- состояние экрана ---------- */
@@ -407,10 +446,18 @@ function inPeriod(e){
   return (NOW-e.d)/864e5<=7;
 }
 function ico(c,size){return '<div class="ico" style="'+(size?'width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*.48)+'px;':'')+'background:'+(c?c.c+'33':'#3a3f46')+'">'+(c?c.e:'❓')+'</div>'}
+function subIcon(r,size){
+  size=size||44;var c=catOf(r.cat),st='width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*.48)+'px;';
+  if(r.img)return '<div class="ico" style="'+st+'background:#2a2e34;overflow:hidden"><img src="'+esc(r.img)+'" alt="" style="width:100%;height:100%;object-fit:cover"></div>';
+  var bg='background:'+(c?c.c+'33':'#3a3f46');
+  if(r.ic)return '<div class="ico" style="'+st+bg+'">'+r.ic+'</div>';
+  return '<div class="ico" style="'+st+bg+';font-weight:700;color:'+(c?c.c:'#cfd4da')+'">'+esc((r.m||'?').trim().charAt(0).toUpperCase()||'?')+'</div>';
+}
+function rowIco(e,c,size){var rl=e.recId&&S.rec.find(function(x){return x.id===e.recId});return (rl&&rl.img)?subIcon(rl,size):ico(c,size)}
 function rowHtml(e,withN){
   var c=e.cat?catOf(e.cat):null;
   var meta=dstr(e.d)+(withN&&e.src!=='recurring'?' · '+e.n+' поз.':'')+(e.src==='recurring'?' · подписка':'')+orig(e)+(e.note?' · '+esc(e.note):'');
-  return '<button class="item" type="button" data-edit="'+e.id+'">'+ico(c,withN?50:44)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+meta+'</span></div><span class="num'+(e.type==='in'?' pos':'')+'">'+(e.type==='in'?'+':'')+fmt(e.a)+'</span></button>';
+  return '<button class="item" type="button" data-edit="'+e.id+'">'+rowIco(e,c,withN?50:44)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+meta+'</span></div><span class="num'+(e.type==='in'?' pos':'')+'">'+(e.type==='in'?'+':'')+fmt(e.a)+'</span></button>';
 }
 
 function render(){
@@ -485,9 +532,9 @@ function renderSearch(all){
 
 /* ---------- навигация и события ---------- */
 function setTab(t){
-  tab=t;['home','rep','subs','search'].forEach(function(v){$('#v-'+v).hidden=v!==t});
+  tab=t;['home','rep','subs','search','chat'].forEach(function(v){$('#v-'+v).hidden=v!==t});
   document.querySelectorAll('#tabs button').forEach(function(b){b.setAttribute('aria-current',b.dataset.tab===t)});
-  $('#fab').hidden=t==='search'||t==='subs';window.scrollTo(0,0);
+  $('#fab').hidden=t==='search'||t==='subs'||t==='chat';$('#composer').hidden=t!=='chat';if(t==='chat'){renderChat();setTimeout(function(){window.scrollTo(0,document.body.scrollHeight)},50)}window.scrollTo(0,0);
 }
 document.addEventListener('click',function(ev){
   var t=ev.target.closest('button');if(!t)return;
@@ -496,7 +543,7 @@ document.addEventListener('click',function(ev){
   if(t.dataset.month){selMonth=+t.dataset.month;renderReports()}
   if(t.dataset.tag){q=t.dataset.tag;$('#q').value=q;renderSearch()}
   if(t.dataset.preset){var pr=PRESETS[+t.dataset.preset];if(pr)openSub({m:pr.m,ic:pr.ic,cat:pr.cat})}
-  if(t.dataset.subedit){var rr=S.rec.find(function(x){return x.id===t.dataset.subedit});if(rr)openSub({id:rr.id,m:rr.m,a:rr.a,cur:rr.cur,cat:rr.cat,per:rr.per,type:rr.type,ic:rr.ic,date:nextCharge(rr)})}
+  if(t.dataset.subedit){var rr=S.rec.find(function(x){return x.id===t.dataset.subedit});if(rr)openSub({id:rr.id,m:rr.m,a:rr.a,cur:rr.cur,cat:rr.cat,per:rr.per,type:rr.type,ic:rr.ic,img:rr.img,date:nextCharge(rr)})}
   if(t.dataset.subpause){var pp=S.rec.find(function(x){return x.id===t.dataset.subpause});if(pp){pp.paused=!pp.paused;if(!pp.paused){var nw=new Date(),ck=mk(nw);pp.last=recDate(ck,pp.day)<=nw?ck:ck-1}save();render();toast(pp.paused?'Подписка приостановлена':'Подписка снова активна')}}
   if(t.dataset.edit){var e=list().find(function(x){return x.id===t.dataset.edit});if(e)openPicker({id:e.id,m:e.m,a:e.oa,cur:e.oc,n:e.n,cat:e.cat,src:e.src,d:e.d,type:e.type,note:e.note})}
 });
@@ -576,13 +623,18 @@ $('#pk-del').onclick=function(){if(!pk||!pk.id)return;S.ex=S.ex.filter(function(
 
 /* ---------- настройки ---------- */
 var payUrl=location.origin+location.pathname+'?amount=СУММА&merchant=МАГАЗИН';
-$('#open-settings').onclick=function(){$('#pay-link').textContent=payUrl;updRatesUI();sheet('#sh-set',true)};
+$('#open-settings').onclick=function(){$('#pay-link').textContent=payUrl;updRatesUI();aiUI();sheet('#sh-set',true)};
 $('#rates-refresh').onclick=function(){fetchRates(true)};
 $('#set-income').onclick=function(){S.income=!S.income;save();render()};
 $('#set-subs').onclick=function(){closeAll();setTab('subs')};
 $('#sub-add').onclick=function(){openSub()};
 $('#sb-cancel').onclick=function(){sheet('#sh-sub',false);sb=null};
-$('#sb-cats').addEventListener('click',function(e){var b=e.target.closest('[data-sc]');if(!b||!sb)return;sb.cat=b.dataset.sc;sbDrawCats();sbCheck()});
+$('#sb-cats').addEventListener('click',function(e){var b=e.target.closest('[data-sc]');if(!b||!sb)return;sb.cat=b.dataset.sc;sbDrawCats();sbCheck();sbIcon()});
+$('#sb-m').addEventListener('input',sbIcon);
+function squareIcon(file){return new Promise(function(res,rej){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){var sz=Math.min(img.width,img.height),c=document.createElement('canvas');c.width=c.height=96;c.getContext('2d').drawImage(img,(img.width-sz)/2,(img.height-sz)/2,sz,sz,0,0,96,96);URL.revokeObjectURL(url);res(c.toDataURL('image/png'))};img.onerror=function(){URL.revokeObjectURL(url);rej()};img.src=url})}
+$('#sb-img-pick').onclick=function(){$('#sb-img-file').value='';$('#sb-img-file').click()};
+$('#sb-img-file').onchange=function(){var f=this.files&&this.files[0];if(!f||!sb)return;squareIcon(f).then(function(d){if(sb){sb.img=d;sbIcon()}}).catch(function(){toast('Не удалось прочитать картинку')})};
+$('#sb-img-del').onclick=function(){if(sb){sb.img=null;sbIcon()}};
 $('#sb-type').addEventListener('click',function(e){var b=e.target.closest('[data-t]');if(!b||!sb)return;sb.type=b.dataset.t;sb.cat=null;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.t===sb.type)});sbDrawCats();sbCheck()});
 $('#sb-per').addEventListener('click',function(e){var b=e.target.closest('[data-p]');if(!b||!sb)return;sb.per=b.dataset.p;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.p===sb.per)});sbHint()});
 $('#sb-a').addEventListener('input',sbCheck);
@@ -594,8 +646,8 @@ $('#sb-save').onclick=function(){
   var m=$('#sb-m').value.trim()||'Подписка',n=0;
   if(sb.id){
     var r=S.rec.find(function(x){return x.id===sb.id});
-    if(r){r.m=m;r.a=a;r.cur=sb.cur;r.cat=sb.cat;r.type=sb.type;r.per=sb.per;r.day=d.getDate();r.mon=d.getMonth();r.startKey=mk(d)}
-  }else S.rec.push({id:uid(),m:m,a:a,cur:sb.cur,cat:sb.cat,type:sb.type,per:sb.per,day:d.getDate(),mon:d.getMonth(),startKey:mk(d),last:null,note:'',ic:sb.ic,paused:false});
+    if(r){r.m=m;r.a=a;r.cur=sb.cur;r.cat=sb.cat;r.type=sb.type;r.per=sb.per;r.day=d.getDate();r.mon=d.getMonth();r.startKey=mk(d);r.img=sb.img||null}
+  }else S.rec.push({id:uid(),m:m,a:a,cur:sb.cur,cat:sb.cat,type:sb.type,per:sb.per,day:d.getDate(),mon:d.getMonth(),startKey:mk(d),last:null,note:'',ic:sb.ic,img:sb.img||null,paused:false});
   save();n=runRecurring();sheet('#sh-sub',false);sb=null;render();
   toast(n?'Подписка сохранена. Записей добавлено: '+n:'Подписка сохранена. Запись появится сама в день списания');
 };
@@ -616,7 +668,7 @@ $('#bk-restore').onclick=function(){
     var dc=r.cur||S.cur||'UAH';
     S={v:2,cur:dc,income:!!r.income,
       ex:r.ex.filter(function(e){return e&&e.id&&e.a>0&&e.d}).map(function(e){return {id:String(e.id),m:String(e.m||'Без названия'),a:+e.a,cur:e.cur||dc,d:String(e.d),n:+e.n||1,cat:e.cat||null,src:e.src||'manual',type:e.type==='in'?'in':'out',note:String(e.note||''),rid:e.rid,recId:e.recId}}),
-      rec:(Array.isArray(r.rec)?r.rec:[]).filter(function(x){return x&&x.id&&x.a>0}).map(function(x){return {id:String(x.id),m:String(x.m||'Платёж'),a:+x.a,cur:x.cur||dc,cat:x.cat||null,type:x.type==='in'?'in':'out',day:Math.min(31,Math.max(1,+x.day||1)),note:String(x.note||''),startKey:+x.startKey||mk(NOW),last:x.last==null?null:+x.last,per:x.per==='y'?'y':'m',mon:+x.mon||0,paused:!!x.paused,ic:x.ic||null}})};
+      rec:(Array.isArray(r.rec)?r.rec:[]).filter(function(x){return x&&x.id&&x.a>0}).map(function(x){return {id:String(x.id),m:String(x.m||'Платёж'),a:+x.a,cur:x.cur||dc,cat:x.cat||null,type:x.type==='in'?'in':'out',day:Math.min(31,Math.max(1,+x.day||1)),note:String(x.note||''),startKey:+x.startKey||mk(NOW),last:x.last==null?null:+x.last,per:x.per==='y'?'y':'m',mon:+x.mon||0,paused:!!x.paused,ic:x.ic||null,img:(typeof x.img==='string'&&/^data:image\/(png|jpeg);base64,/.test(x.img))?x.img:null}})};
     save();render();toast('Восстановлено: '+S.ex.length+' записей');
   }catch(e){toast('Это не похоже на копию MIDAS')}
 };
@@ -721,6 +773,391 @@ $('#file').onchange=function(){
   if(c){S.ex.push({id:uid(),m:m||'Apple Pay',a:a,cur:cc,d:new Date().toISOString(),n:1,cat:c.n,src:'applepay',type:'out',note:''});save();toast('Добавлено: '+c.e+' '+c.n)}
   else setTimeout(function(){openPicker({m:m||'Apple Pay',a:a,cur:cc,n:1,src:'applepay'},'💳 Оплата Apple Pay. Выберите категорию.')},50);
 })();
+
+/* ---------- помощник: данные и расчёты ---------- */
+function fx(n){return Math.round(n*100)/100}
+function pl(n,a,b,c){n=Math.abs(n)%100;var d=n%10;if(n>10&&n<20)return c;if(d>1&&d<5)return b;if(d===1)return a;return c}
+var MON_PREP=['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре'];
+function addMonths(d,n){var x=new Date(d),day=x.getDate();x.setDate(1);x.setMonth(x.getMonth()+n);var dim=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();x.setDate(Math.min(day,dim));return x}
+function dshort(d){return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()}
+function rangeFor(sp){
+  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),f,t=now,l;
+  if(sp.all)return {from:null,to:null,label:'за всё время'};
+  if(sp.today){f=t0;l='сегодня'}
+  else if(sp.yesterday){f=new Date(t0);f.setDate(f.getDate()-1);t=new Date(t0-1);l='вчера'}
+  else if(sp.last_month){f=new Date(now.getFullYear(),now.getMonth()-1,1);t=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);l='в прошлом месяце'}
+  else if(sp.ytd){f=new Date(now.getFullYear(),0,1);l='с начала года'}
+  else if(sp.days){f=new Date(t0);f.setDate(f.getDate()-sp.days);l='за последние '+sp.days+' '+pl(sp.days,'день','дня','дней')}
+  else if(sp.months){f=addMonths(t0,-sp.months);l=sp.months===1?'за последний месяц':'за последние '+sp.months+' '+pl(sp.months,'месяц','месяца','месяцев')}
+  else{f=new Date(now.getFullYear(),now.getMonth(),1);l='в этом месяце'}
+  return {from:f,to:t,label:l};
+}
+function normCats(a){
+  if(!a)return null;if(!Array.isArray(a))a=[a];var out=[];
+  a.forEach(function(x){x=String(x||'').trim();var c=CATS.concat(INCATS).filter(function(k){return k.n.toLowerCase()===x.toLowerCase()})[0]||catLoose(x);if(c&&out.indexOf(c.n)<0)out.push(c.n)});
+  return out.length?out:null;
+}
+function queryTx(o){
+  var from=o.from?new Date(o.from):null,to=o.to?new Date(o.to):null,mt=(o.merchant||'').toLowerCase().trim();
+  var rows=list().filter(function(e){
+    if(o.type&&e.type!==o.type)return false;
+    if(o.cats&&o.cats.length&&o.cats.indexOf(e.cat)<0)return false;
+    if(o.src&&e.src!==o.src)return false;
+    if(mt&&(e.m+' '+e.note).toLowerCase().indexOf(mt)<0)return false;
+    if(from&&e.d<from)return false;if(to&&e.d>to)return false;
+    return true;
+  });
+  var r={rows:rows,total:0,count:rows.length,byCat:{},byMerchant:{},byMonth:{}};
+  rows.forEach(function(e){
+    r.total+=e.a;var c=e.cat||'Без категории';r.byCat[c]=(r.byCat[c]||0)+e.a;
+    var mm=r.byMerchant[e.m]||(r.byMerchant[e.m]={t:0,n:0});mm.t+=e.a;mm.n++;
+    var k=dIn(e.d).slice(0,7);r.byMonth[k]=(r.byMonth[k]||0)+e.a;
+  });
+  r.total=fx(r.total);return r;
+}
+function topOf(o,n,pick){return Object.keys(o).map(function(k){return {name:k,total:fx(pick?o[k].t:o[k]),count:pick?o[k].n:undefined}}).sort(function(a,b){return b.total-a.total}).slice(0,n)}
+function toolSpending(a){
+  a=a||{};var from=null,to=null,label=null,cats=normCats(a.category);
+  function pd(v,end){if(v instanceof Date)return v;if(!v)return null;var d=new Date(String(v)+(end?'T23:59:59':'T00:00:00'));return isNaN(d)?null:d}
+  from=pd(a.from,false);to=pd(a.to,true);
+  if(!from&&!to){
+    var sp={};if(a.all)sp.all=true;else if(a.months_back)sp.months=Math.min(120,Math.max(1,a.months_back|0));else if(a.days_back)sp.days=Math.min(3650,Math.max(1,a.days_back|0));else sp.this_month=true;
+    var rg=rangeFor(sp);from=rg.from;to=rg.to;label=rg.label;
+  }
+  var q=queryTx({type:a.type==='in'?'in':'out',cats:cats,merchant:a.merchant,from:from,to:to});
+  var span=from&&to?(to-from)/864e5:null,mons=span&&span>=28?span/30.4375:null;
+  return {currency:S.cur||'UAH',period:{from:from?dIn(from):null,to:to?dIn(to):null,label:label},category_filter:cats,merchant_filter:a.merchant||null,
+    total:q.total,transactions:q.count,average_per_month:mons?fx(q.total/mons):null,
+    by_category:topOf(q.byCat,10,false),top_merchants:topOf(q.byMerchant,5,true),by_month:Object.keys(q.byMonth).sort().map(function(k){return {month:k,total:fx(q.byMonth[k])}})};
+}
+function monthRange(m){var y=Math.floor(m/12),mo=m%12;return {f:new Date(y,mo,1),t:new Date(y,mo+1,0,23,59,59),key:y+'-'+('0'+(mo+1)).slice(-2)}}
+function toolMonthly(a){
+  var n=Math.min(24,Math.max(1,((a&&a.months)|0)||6)),cur=mk(new Date()),out=[];
+  for(var i=n-1;i>=0;i--){var r=monthRange(cur-i),qo=queryTx({type:'out',from:r.f,to:r.t}),qi=queryTx({type:'in',from:r.f,to:r.t});
+    out.push({month:r.key,expenses:qo.total,income:S.income?qi.total:null,top_categories:topOf(qo.byCat,4,false)})}
+  return {currency:S.cur||'UAH',months:out};
+}
+function avgBasis(){
+  var all=list();if(!all.length)return null;
+  var first=all.reduce(function(m,e){return e.d<m?e.d:m},all[0].d),now=new Date(),cur=mk(now),start=Math.max(mk(first),cur-3),ms=[];
+  for(var m=start;m<=cur-1;m++)ms.push(m);
+  if(!ms.length){
+    var dd=Math.max(1,now.getDate()),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),f=new Date(now.getFullYear(),now.getMonth(),1);
+    var q=queryTx({type:'out',from:f,to:now}),qi=queryTx({type:'in',from:f,to:now});
+    return {text:'пока данные только за текущий месяц ('+dd+' '+pl(dd,'день','дня','дней')+'), оценка грубая',out:q.total/dd*dim,inc:qi.total/dd*dim,months:0};
+  }
+  var o=0,i=0;ms.forEach(function(m){var r=monthRange(m);o+=queryTx({type:'out',from:r.f,to:r.t}).total;i+=queryTx({type:'in',from:r.f,to:r.t}).total});
+  return {text:'полных месяцев: '+ms.length+' ('+ms.map(function(m){return MONTHS[m%12]}).join(', ')+')',out:o/ms.length,inc:i/ms.length,months:ms.length};
+}
+function getSummary(){
+  var all=list(),now=new Date(),cur=monthRange(mk(now)),b=avgBasis();
+  var qo=queryTx({type:'out',from:cur.f,to:now}),qi=queryTx({type:'in',from:cur.f,to:now});
+  var q3=queryTx({type:'out',from:addMonths(new Date(now.getFullYear(),now.getMonth(),now.getDate()),-3),to:now});
+  var subs=S.rec.filter(function(r){return !r.paused&&r.type!=='in'}),sm=subs.reduce(function(s,r){return s+monthlyEq(r)},0);
+  return {currency:S.cur||'UAH',today:dIn(now),income_tracking_enabled:!!S.income,transactions_total:all.length,
+    current_month:{expenses:qo.total,income:S.income?qi.total:null},
+    average_per_month:b?{basis:b.text,expenses:fx(b.out),income:S.income?fx(b.inc):null,surplus:S.income?fx(b.inc-b.out):null}:null,
+    top_categories_last_3_months:topOf(q3.byCat,5,false),subscriptions:{count:subs.length,monthly_total:fx(sm)}};
+}
+function projectSavings(a){
+  var monthly=+a.monthly,goal=+a.goal,cur=+a.current||0,rate=+a.annual_rate_pct||0;
+  if(!(monthly>0)||!(goal>0))return {error:'Нужны положительные ежемесячная сумма и цель'};
+  if(cur>=goal)return {already_reached:true,current:fx(cur),goal:fx(goal)};
+  var r=rate/100/12,bal=cur,n=0;
+  while(bal<goal&&n<1200){bal=bal*(1+r)+monthly;n++}
+  if(bal<goal)return {error:'Цель недостижима за 100 лет'};
+  var d=addMonths(new Date(),n),y=Math.floor(n/12),mm=n%12;
+  var dur=(y?y+' '+pl(y,'год','года','лет'):'')+(y&&mm?' ':'')+(mm?mm+' '+pl(mm,'месяц','месяца','месяцев'):'');
+  return {currency:S.cur||'UAH',monthly:fx(monthly),goal:fx(goal),current:fx(cur),annual_rate_pct:rate,months:n,duration_text:dur,reach:MON_PREP[d.getMonth()]+' '+d.getFullYear(),
+    deposits_total:fx(monthly*n),interest_earned:rate?fx(bal-cur-monthly*n):0,formula:rate?null:'('+fx(goal)+' − '+fx(cur)+') / '+fx(monthly)+' = '+fx((goal-cur)/monthly)+' → округляем вверх до '+n};
+}
+function canAfford(a){
+  var price=+a.price,sv=(a.available_savings==null||a.available_savings==='')?null:+a.available_savings,b=avgBasis();
+  var o={currency:S.cur||'UAH',price:fx(price),available_savings:sv};
+  if(b){o.average_monthly_expenses=fx(b.out);o.basis=b.text;o.price_pct_of_monthly_expenses=b.out>0?Math.round(price/b.out*100):null;
+    if(S.income){o.average_monthly_income=fx(b.inc);o.average_monthly_surplus=fx(b.inc-b.out);if(b.inc-b.out>0)o.months_to_save_from_surplus=Math.ceil(price/(b.inc-b.out))}}
+  if(sv!==null){o.remaining_after_purchase=fx(sv-price);o.shortfall=sv<price?fx(price-sv):0;if(b&&b.out>0)o.remaining_in_months_of_expenses=fx((sv-price)/b.out)}
+  o.note='Остатки на счетах MIDAS не хранит. Это расчёт по записям, а не финансовая рекомендация.';
+  return o;
+}
+function toolList(a){
+  a=a||{};var lim=Math.min(100,Math.max(1,(a.limit|0)||20));
+  var q=queryTx({type:a.type==='in'?'in':a.type==='out'?'out':null,cats:normCats(a.category),merchant:a.merchant,from:a.from?new Date(a.from+'T00:00:00'):null,to:a.to?new Date(a.to+'T23:59:59'):null});
+  return {currency:S.cur||'UAH',total_found:q.count,items:q.rows.sort(function(x,y){return y.d-x.d}).slice(0,lim).map(function(e){return {date:dIn(e.d),merchant:e.m,amount:fx(e.a),type:e.type,category:e.cat,note:e.note||undefined}})};
+}
+function toolSubs(){return {currency:S.cur||'UAH',subscriptions:S.rec.map(function(r){var nx=nextCharge(r);return {name:r.m,amount:r.a,currency:r.cur,period:r.per==='y'?'год':'месяц',type:r.type,paused:!!r.paused,next_charge:nx?dIn(nx):null}})}}
+function runTool(name,a){
+  try{
+    if(name==='get_summary')return getSummary();
+    if(name==='get_spending')return toolSpending(a);
+    if(name==='get_monthly_totals')return toolMonthly(a);
+    if(name==='list_transactions')return toolList(a);
+    if(name==='list_subscriptions')return toolSubs();
+    if(name==='project_savings')return projectSavings(a||{});
+    if(name==='can_afford')return canAfford(a||{});
+  }catch(e){return {error:String(e&&e.message||e)}}
+  return {error:'Неизвестный инструмент'};
+}
+
+/* ---------- помощник: встроенные расчёты (без ИИ) ---------- */
+function parseMoney(t){
+  var out=[],re=/(\d+(?:[  ]\d{3})*(?:[.,]\d+)?)(?:\s*(тысяч\p{L}*|тыс\.?|млн\.?|миллион\p{L}*|[кk])(?![\p{L}\d]))?/gu,m;
+  while((m=re.exec(t))){
+    var v=parseFloat(m[1].replace(/[  ]/g,'').replace(',','.'));if(!isFinite(v))continue;
+    var sfx=(m[2]||'').toLowerCase(),mul=1;
+    if(/^(тыс|к|k)/.test(sfx))mul=1000;else if(/^(млн|милли)/.test(sfx))mul=1e6;
+    out.push({v:v*mul,i:m.index,e:m.index+m[0].length});
+  }
+  return out;
+}
+var WORDN={один:1,одну:1,два:2,две:2,три:3,четыре:4,пять:5,шесть:6,семь:7,восемь:8,девять:9,десять:10,двенадцать:12};
+function parsePeriod(low){
+  var m;
+  if(/за\s+(всё|все)\s+время|за\s+всю\s+историю/.test(low))return {spec:{all:true}};
+  if(/в\s+прошл\p{L}*\s+месяц|прошл\p{L}*\s+месяц/u.test(low))return {spec:{last_month:true}};
+  if(/в\s+этом\s+месяц|за\s+этот\s+месяц|в\s+текущем\s+месяц/.test(low))return {spec:{this_month:true}};
+  if(/в\s+этом\s+году|с\s+начала\s+года/.test(low))return {spec:{ytd:true}};
+  if(/полгода/.test(low))return {spec:{months:6}};
+  if(m=low.match(/(\d+)\s*(месяц\p{L}*|мес\.?|недел\p{L}*|дн\p{L}*|день|лет|год\p{L}*)/u)){
+    var n=+m[1],u=m[2];if(/^(месяц|мес)/.test(u))return {spec:{months:n}};if(/^недел/.test(u))return {spec:{days:n*7}};if(/^(дн|ден)/.test(u))return {spec:{days:n}};return {spec:{months:n*12}};
+  }
+  if(m=low.match(/(один|одну|два|две|три|четыре|пять|шесть|семь|восемь|девять|десять|двенадцать)\s+(месяц\p{L}*|недел\p{L}*|дн\p{L}*|год\p{L}*|лет)/u)){
+    var n2=WORDN[m[1]],u2=m[2];if(/^месяц/.test(u2))return {spec:{months:n2}};if(/^недел/.test(u2))return {spec:{days:n2*7}};if(/^дн/.test(u2))return {spec:{days:n2}};return {spec:{months:n2*12}};
+  }
+  if(/за\s+(последн\p{L}*\s+)?год/u.test(low))return {spec:{months:12}};
+  if(/за\s+(последн\p{L}*\s+)?недел/u.test(low))return {spec:{days:7}};
+  if(/за\s+(последн\p{L}*\s+)?месяц/u.test(low))return {spec:{months:1}};
+  if(/сегодня/.test(low))return {spec:{today:true}};
+  if(/вчера/.test(low))return {spec:{yesterday:true}};
+  return {spec:{this_month:true},def:true};
+}
+var CAT_WORDS=[
+ {label:'еда',cats:['Продукты','Кафе и рестораны'],w:['еда','еду','еды','едой','питани']},
+ {label:'Продукты',cats:['Продукты'],w:['продукт','супермаркет','магазин','бакале']},
+ {label:'Кафе и рестораны',cats:['Кафе и рестораны'],w:['кафе','ресторан','кофе','доставк','фастфуд','обед','кофейн']},
+ {label:'Транспорт',cats:['Транспорт'],w:['транспорт','такси','бензин','проезд','метро','заправк','автобус']},
+ {label:'Дом',cats:['Дом'],w:['дом','жиль','аренд','коммунал','квартир']},
+ {label:'Здоровье',cats:['Здоровье'],w:['здоров','аптек','врач','лекарств','медицин']},
+ {label:'Одежда',cats:['Одежда'],w:['одежд','обув']},
+ {label:'Развлечения',cats:['Развлечения'],w:['развлеч','игры','игру','игра','кино']},
+ {label:'Другое',cats:['Другое'],w:['другое','прочее']}
+];
+function detectCats(low){
+  var toks=low.split(/[^\p{L}\d]+/u).filter(Boolean),cats=[],labels=[];
+  CAT_WORDS.forEach(function(c){
+    if(toks.some(function(tk){return c.w.some(function(x){return tk===x||(x.length>=4&&tk.indexOf(x)===0)})})){
+      labels.push(c.label);c.cats.forEach(function(k){if(cats.indexOf(k)<0)cats.push(k)});
+    }
+  });
+  return {cats:cats.length?cats:null,label:labels.join(' и ')};
+}
+function detectMerchant(low){
+  var names={};S.ex.forEach(function(e){if(e.m&&e.m.length>=3)names[e.m.toLowerCase()]=e.m});
+  var best=null;Object.keys(names).forEach(function(k){if(low.indexOf(k)>-1&&(!best||k.length>best.length))best=k});
+  return best?names[best]:null;
+}
+function listLines(arr,n){return arr.slice(0,n).map(function(x){return '• '+x}).join('\n')}
+function answerSpending(t){
+  var low=t.toLowerCase(),pp=parsePeriod(low),ct=detectCats(low),mer=detectMerchant(low);
+  var isIn=/доход|заработ|получил|зарплат/.test(low)&&!/расход|потрат/.test(low);
+  if(isIn&&!S.income)return 'Учёт доходов выключен. Включите его в Настройки → «Доходы», добавьте доходы, и я смогу их считать.';
+  var rg=rangeFor(pp.spec),q=toolSpending({type:isIn?'in':'out',category:ct.cats,merchant:mer,from:rg.from,to:rg.to});
+  var what=ct.cats?(' на «'+ct.label+'»'+(ct.cats.length>1?' ('+ct.cats.join(' + ')+')':'')):(mer?' в «'+mer+'»':'');
+  var dates=rg.from?' ('+dshort(rg.from)+' – '+dshort(rg.to)+')':'';
+  if(!q.transactions)return (isIn?'Доходов':'Расходов')+what+' '+rg.label+dates+' не нашлось.'+(pp.def?' Период в вопросе не указан, я смотрел этот месяц.':'');
+  var out=(isIn?'Доход':'Вы потратили')+(what&&!isIn?what:'')+' **'+fmt(q.total)+'** '+rg.label+dates+'.';
+  out+='\nЗаписей: '+q.transactions+(q.average_per_month&&q.by_month.length>1?', в среднем **'+fmt(q.average_per_month)+'** в месяц':'')+'.';
+  if(q.by_category.length>1&&!isIn)out+='\n\nПо категориям:\n'+listLines(q.by_category.map(function(c){return c.name+': '+fmt(c.total)}),6);
+  if(!mer&&q.top_merchants.length)out+='\n\nКуда уходит больше всего:\n'+listLines(q.top_merchants.map(function(c){return c.name+': '+fmt(c.total)+' ('+c.count+')'}),3);
+  if(q.by_month.length>1)out+='\n\nПо месяцам:\n'+listLines(q.by_month.map(function(c){return c.month+': '+fmt(c.total)}),12);
+  if(pp.def)out+='\n\nПериод в вопросе не указан, я посчитал за этот месяц.';
+  return out;
+}
+function answerSavings(t){
+  var rate=null,low=t.toLowerCase(),m=low.match(/(\d+(?:[.,]\d+)?)\s*%/);
+  if(m){rate=parseFloat(m[1].replace(',','.'));low=low.replace(m[0],' ')}
+  low=low.replace(/(\d+)\s*(месяц\p{L}*|мес\.?|недел\p{L}*|дн\p{L}*|день|лет|год\p{L}*)/gu,' ');
+  var ns=parseMoney(low),monthly=null,goal=null,cur=null;
+  ns.forEach(function(n){
+    var pre=low.slice(Math.max(0,n.i-30),n.i),post=low.slice(n.e,n.e+16);
+    if(/(^|[^\p{L}])по\s*$/u.test(pre)||/^\s*(в\s+месяц|\/\s*мес|ежемесячно|каждый\s+месяц)/u.test(post))monthly=monthly||n;
+    else if(/(есть|уже|сейчас|накопил\p{L}*|имею|стартов\p{L}*|начальн\p{L}*)\s*$/u.test(pre))cur=cur||n;
+    else if(/(накоп\p{L}*|собер\p{L}*|набер\p{L}*|(^|[^\p{L}])до|цел\p{L}*|чтобы|хочу)\s*$/u.test(pre))goal=goal||n;
+  });
+  var rest=ns.filter(function(n){return n!==monthly&&n!==goal&&n!==cur}).sort(function(a,b){return a.v-b.v});
+  if(!monthly&&!goal&&rest.length>=2){monthly=rest[0];goal=rest[rest.length-1]}
+  else{if(!goal&&rest.length)goal=rest[rest.length-1];if(!monthly&&rest.length>1)monthly=rest[0]}
+  if(!goal||!monthly)return 'Чтобы посчитать накопления, напишите сумму в месяц и цель. Например: «Если буду откладывать по 5 тысяч, когда накоплю 100 тысяч?»';
+  var r=projectSavings({monthly:monthly.v,goal:goal.v,current:cur?cur.v:0,annual_rate_pct:rate||0});
+  if(r.error)return r.error+'.';
+  if(r.already_reached)return 'У вас уже есть **'+fmt(r.current)+'**, цель в '+fmt(r.goal)+' достигнута.';
+  var out='Откладывая **'+fmt(r.monthly)+'** в месяц'+(cur?' (уже есть '+fmt(r.current)+')':'')+(rate?' под '+rate+'% годовых':'')+', вы накопите **'+fmt(r.goal)+'** примерно за **'+r.duration_text+'**, то есть в '+r.reach+'.';
+  out+='\n\nРасчёт: '+(r.formula?r.formula+' мес.':'проценты начисляются ежемесячно (годовая ставка / 12), '+r.months+' мес.');
+  if(rate)out+='\nВзносы: '+fmt(r.deposits_total)+', проценты: '+fmt(r.interest_earned)+'.';
+  var b=avgBasis();
+  if(S.income&&b&&b.inc>0){var sp=b.inc-b.out;out+='\n\nПо вашим записям в среднем остаётся '+fmt(sp)+' в месяц (доходы − расходы, '+b.text+'). '+(sp>=r.monthly?'Откладывать '+fmt(r.monthly)+' реально.':sp>0?'Для '+fmt(r.monthly)+' в месяц не хватает около '+fmt(r.monthly-sp)+'.':'Сейчас расходы не меньше доходов, поэтому откладывать нужно за счёт сокращения трат.')}
+  return out;
+}
+function answerAfford(t){
+  var low=t.toLowerCase().replace(/(\d+)\s*(месяц\p{L}*|мес\.?|недел\p{L}*|дн\p{L}*|день|лет|год\p{L}*)/gu,' ');
+  var ns=parseMoney(low);if(!ns.length)return 'Напишите цену покупки. Например: «Могу ли я позволить себе iPhone за 35 тысяч?»';
+  var price=null,sv=null;
+  ns.forEach(function(n){var pre=low.slice(Math.max(0,n.i-30),n.i);
+    if(/(есть|накоплен\p{L}*|накопил\p{L}*|отложен\p{L}*|на\s+счету|сбережен\p{L}*|имею|располагаю)\s*$/u.test(pre)||/(у\s+меня)\s*$/u.test(pre))sv=sv||n;});
+  var rest=ns.filter(function(n){return n!==sv});
+  price=rest.length?rest.reduce(function(a,b){return b.v>a.v?b:a}):null;
+  if(!price)return 'Не понял цену покупки. Напишите её цифрами, например «за 35 тысяч».';
+  var r=canAfford({price:price.v,available_savings:sv?sv.v:null}),out='Цена покупки: **'+fmt(r.price)+'**.';
+  if(r.average_monthly_expenses!=null){
+    out+='\nВаши средние расходы: '+fmt(r.average_monthly_expenses)+' в месяц ('+r.basis+'). Покупка равна '+r.price_pct_of_monthly_expenses+'% месячных расходов.';
+    if(r.average_monthly_surplus!=null){
+      if(r.average_monthly_surplus>0)out+='\nВ среднем у вас остаётся '+fmt(r.average_monthly_surplus)+' в месяц (доходы − расходы), поэтому накопить эту сумму можно примерно за **'+r.months_to_save_from_surplus+' '+pl(r.months_to_save_from_surplus,'месяц','месяца','месяцев')+'**.';
+      else out+='\nСейчас расходы не меньше доходов, поэтому без сокращения трат накопить на покупку не получится.';
+    }
+  }else out+='\nВ MIDAS пока мало записей, чтобы оценить ваши обычные расходы.';
+  if(sv){
+    if(r.shortfall>0)out+='\n\nУ вас есть '+fmt(sv.v)+', не хватает **'+fmt(r.shortfall)+'**.';
+    else{var mo=r.remaining_in_months_of_expenses;out+='\n\nУ вас есть '+fmt(sv.v)+'. После покупки останется **'+fmt(r.remaining_after_purchase)+'**'+(mo!=null?' (≈ '+String(Math.round(mo*10)/10).replace('.',',')+' мес. средних расходов)':'')+'.'+(mo!=null?(mo>=3?' Это выше ориентира в 3 месяца расходов.':' Это ниже ориентира в 3 месяца расходов, запас будет небольшим.'):'')}
+  }else out+='\n\nСколько у вас накоплено, MIDAS не знает. Напишите, например: «могу ли я купить iPhone за 35 тысяч, у меня есть 20 тысяч».';
+  return out+'\n\nЭто расчёт по вашим записям, а не финансовая рекомендация.';
+}
+function answerSubsChat(){
+  var s=toolSubs().subscriptions.filter(function(x){return !x.paused&&x.type!=='in'});
+  if(!s.length)return 'Подписок пока нет. Добавьте их во вкладке «Подписки».';
+  var m=getSummary().subscriptions.monthly_total;
+  return 'Активных подписок: '+s.length+'. В месяц на них уходит около **'+fmt(m)+'**, это ≈ '+fmt(m*12)+' в год.\n\n'+listLines(s.map(function(x){return x.name+': '+fmtIn(x.amount,x.currency)+' ('+x.period+')'}),20);
+}
+function answerTop(){
+  var q=toolSpending({months_back:3});
+  if(!q.transactions)return 'Пока нет расходов за последние 3 месяца.';
+  return 'За последние 3 месяца вы потратили **'+fmt(q.total)+'**. Больше всего ушло на:\n'+listLines(q.by_category.map(function(c){return c.name+': '+fmt(c.total)+' ('+Math.round(c.total/q.total*100)+'%)'}),5);
+}
+function answerAvg(){
+  var b=avgBasis();if(!b)return 'Пока нет записей, чтобы посчитать средние расходы.';
+  var out='В среднем вы тратите **'+fmt(b.out)+'** в месяц ('+b.text+').';
+  if(S.income)out+='\nСредний доход: '+fmt(b.inc)+' в месяц, остаётся около '+fmt(b.inc-b.out)+'.';
+  return out;
+}
+function answerIncome(){
+  if(!S.income)return 'Учёт доходов выключен. Включите его в Настройки → «Доходы».';
+  var s=getSummary();
+  return 'В этом месяце: доход **'+fmt(s.current_month.income)+'**, расходы '+fmt(s.current_month.expenses)+', баланс **'+fmt(s.current_month.income-s.current_month.expenses)+'**.'+(s.average_per_month?'\nВ среднем за месяц: доход '+fmt(s.average_per_month.income)+', расходы '+fmt(s.average_per_month.expenses)+'.':'');
+}
+var HELP_TXT='Я могу посчитать по вашим записям в MIDAS, например:\n• «Сколько я потратил на еду за последние 3 месяца?»\n• «Могу ли я позволить себе купить iPhone за 35 тысяч?»\n• «Если буду откладывать по 5 тысяч, когда накоплю 100 тысяч?»\n• «На что я трачу больше всего?»\n• «Сколько уходит на подписки?»\n\nСвободные вопросы понимает ИИ Claude: ключ подключается в Настройки → ИИ-помощник.';
+function offlineAnswer(text){
+  var low=text.toLowerCase();
+  if(/откладыв|накопл|накоплю|копить|копл|отложу|сбереж|коплю/.test(low)&&parseMoney(low).length>=2)return answerSavings(text);
+  if(/(могу\s+ли|позволить|хватит|потяну|осилю|стоит\s+ли|купить|куплю)/.test(low)&&parseMoney(low).length)return answerAfford(text);
+  if(/подписк/.test(low))return answerSubsChat();
+  if(/больше\s+всего|на\s+что\s+(я\s+)?(трачу|уходит|уходят)|основн\p{L}*\s+трат/u.test(low))return answerTop();
+  if(/средн/.test(low)&&/(трат|расход)/.test(low))return answerAvg();
+  if(/(доход|заработ|баланс|зарплат)/.test(low)&&!/(трат|расход)/.test(low))return answerIncome();
+  if(/(сколько|потрат|трат|расход|ушло|уходит|обошл)/.test(low))return answerSpending(text);
+  return HELP_TXT;
+}
+
+/* ---------- помощник: ИИ Claude (по ключу пользователя) ---------- */
+var AI_TOOLS=[
+ {name:'get_summary',description:'Сводка по финансам пользователя: расходы и доходы этого месяца, средние значения за месяц, топ категорий за 3 месяца, подписки.',input_schema:{type:'object',properties:{}}},
+ {name:'get_spending',description:'Сумма расходов (или доходов) за период с фильтрами. Если период не задан, берётся текущий месяц. Категории расходов: Продукты, Кафе и рестораны, Транспорт, Дом, Здоровье, Одежда, Развлечения, Другое. "Еда" = Продукты + Кафе и рестораны.',input_schema:{type:'object',properties:{category:{type:'array',items:{type:'string'}},merchant:{type:'string',description:'Часть названия магазина или заметки'},from:{type:'string',description:'YYYY-MM-DD'},to:{type:'string',description:'YYYY-MM-DD'},months_back:{type:'integer',description:'Последние N месяцев'},days_back:{type:'integer'},all:{type:'boolean'},type:{type:'string',enum:['out','in']}}}},
+ {name:'get_monthly_totals',description:'Расходы и доходы по календарным месяцам за последние N месяцев (до 24).',input_schema:{type:'object',properties:{months:{type:'integer'}}}},
+ {name:'list_transactions',description:'Список записей (новые сверху) с фильтрами.',input_schema:{type:'object',properties:{limit:{type:'integer'},category:{type:'array',items:{type:'string'}},merchant:{type:'string'},from:{type:'string'},to:{type:'string'},type:{type:'string',enum:['out','in']}}}},
+ {name:'list_subscriptions',description:'Подписки и регулярные платежи пользователя.',input_schema:{type:'object',properties:{}}},
+ {name:'project_savings',description:'Через сколько месяцев накопится цель при ежемесячных взносах, с учётом уже накопленного и годовой ставки (проценты начисляются ежемесячно).',input_schema:{type:'object',properties:{monthly:{type:'number'},goal:{type:'number'},current:{type:'number'},annual_rate_pct:{type:'number'}},required:['monthly','goal']}},
+ {name:'can_afford',description:'Факты для вопроса «могу ли я позволить покупку»: цена против средних расходов и доходов, срок накопления, остаток после покупки, если известны накопления.',input_schema:{type:'object',properties:{price:{type:'number'},available_savings:{type:'number'}},required:['price']}}
+];
+function aiKey(){try{return localStorage.getItem('midas.aikey')||''}catch(e){return ''}}
+function aiModel(){try{return localStorage.getItem('midas.aimodel')||'claude-sonnet-5-5'}catch(e){return 'claude-sonnet-5-5'}}
+function aiSystem(){
+  return 'Ты финансовый помощник внутри приложения для учёта трат MIDAS. Отвечай по-русски, коротко и по делу, без воды. '+
+  'Все цифры бери только из инструментов, ничего не выдумывай и не считай в уме большие суммы: для расчётов используй инструменты. '+
+  'Суммы в инструментах уже в валюте пользователя ('+(S.cur||'UAH')+'). Сегодня '+dIn(new Date())+'. Учёт доходов '+(S.income?'включён':'выключен')+'. '+
+  'Остатки на счетах и накопления приложение не хранит: если для ответа они нужны, скажи об этом и предложи назвать сумму. '+
+  'Показывай ключевые цифры и короткую формулу расчёта. Ты даёшь расчёты и факты, а решение остаётся за пользователем; это не финансовая консультация. '+
+  'Форматирование: короткие абзацы, **жирным** только главные цифры, списки через «• ».';
+}
+function callClaude(body){
+  return fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':aiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)})
+    .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,status:r.status,j:j}})});
+}
+function histMsgs(){
+  var msgs=[];
+  CHAT.slice(-14).forEach(function(m){
+    if(m.pending||m.err)return;var role=m.r==='u'?'user':'assistant';
+    if(msgs.length&&msgs[msgs.length-1].role===role)msgs[msgs.length-1].content+='\n'+m.t;else msgs.push({role:role,content:m.t});
+  });
+  while(msgs.length&&msgs[0].role!=='user')msgs.shift();
+  return msgs;
+}
+async function askAI(){
+  var msgs=histMsgs();
+  for(var i=0;i<6;i++){
+    var r;
+    try{r=await callClaude({model:aiModel(),max_tokens:1024,system:aiSystem(),tools:AI_TOOLS,messages:msgs})}catch(e){var er=new Error('net');er.net=true;throw er}
+    if(!r.ok){
+      var em=(r.j&&r.j.error&&r.j.error.message)||'';
+      if(r.status===401||r.status===403)throw new Error('Ключ не подошёл. Проверьте его в Настройки → ИИ-помощник.');
+      if(r.status===429)throw new Error('Слишком много запросов, подождите минуту и повторите.');
+      if(/credit|billing|balance/i.test(em))throw new Error('На аккаунте Anthropic закончились средства. Пополните баланс в console.anthropic.com.');
+      if(r.status===404||/model/i.test(em))throw new Error('Модель недоступна для этого ключа. Выберите другую в настройках.');
+      throw new Error('ИИ ответил ошибкой ('+r.status+'). '+em);
+    }
+    var blocks=r.j.content||[];
+    if(r.j.stop_reason==='tool_use'){
+      msgs.push({role:'assistant',content:blocks});
+      msgs.push({role:'user',content:blocks.filter(function(b){return b.type==='tool_use'}).map(function(b){return {type:'tool_result',tool_use_id:b.id,content:JSON.stringify(runTool(b.name,b.input||{}))}})});
+      continue;
+    }
+    var txt=blocks.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('\n').trim();
+    return txt||'Не удалось получить ответ.';
+  }
+  return 'Не получилось завершить расчёт. Попробуйте переформулировать вопрос.';
+}
+
+/* ---------- помощник: чат ---------- */
+var CHAT=[],chatBusy=false;
+try{var cc0=JSON.parse(localStorage.getItem('midas.chat'));if(Array.isArray(cc0))CHAT=cc0.filter(function(m){return m&&(m.r==='u'||m.r==='a')&&typeof m.t==='string'&&!m.pending}).slice(-40)}catch(e){}
+function chatSave(){try{localStorage.setItem('midas.chat',JSON.stringify(CHAT.filter(function(m){return !m.pending}).slice(-40)))}catch(e){}}
+function fmtMsg(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}
+function aiUI(){
+  var k=aiKey();
+  if($('#ai-status'))$('#ai-status').textContent=k?'ИИ подключён: ключ сохранён на этом телефоне.':'ИИ не подключён, работают встроенные расчёты.';
+  if($('#ai-model'))$('#ai-model').value=aiModel();
+  if($('#chat-mode'))$('#chat-mode').textContent=k?'ИИ Claude · '+(aiModel().indexOf('haiku')>-1?'Haiku':'Sonnet'):'Встроенные расчёты · без ИИ';
+}
+var CHIPS=['Сколько я потратил на еду за последние 3 месяца?','Могу ли я позволить себе купить iPhone за 35 тысяч?','Если буду откладывать по 5 тысяч, когда накоплю 100 тысяч?','На что я трачу больше всего?','Сколько уходит на подписки?'];
+function renderChat(){
+  aiUI();
+  $('#chat-list').innerHTML=CHAT.map(function(m){return '<div class="msg '+m.r+(m.pending?' pend':'')+'">'+fmtMsg(m.t)+'</div>'}).join('');
+  $('#chat-hints').hidden=CHAT.length>0;$('#chat-clear').hidden=!CHAT.length;
+  $('#chat-chips').innerHTML=CHIPS.map(function(c,i){return '<button class="tagchip" type="button" data-q="'+i+'">'+esc(c)+'</button>'}).join('');
+}
+async function sendChat(text){
+  text=String(text||'').trim();if(!text||chatBusy)return;
+  chatBusy=true;$('#chat-send').disabled=true;
+  CHAT.push({r:'u',t:text});chatSave();CHAT.push({r:'a',t:'Считаю…',pending:true});renderChat();window.scrollTo(0,document.body.scrollHeight);
+  var ans,err=false;
+  try{
+    if(aiKey()){
+      try{ans=await askAI()}
+      catch(e){if(e&&e.net){ans=offlineAnswer(text)+'\n\n(Нет связи с ИИ, ответ посчитан встроенными расчётами.)'}else throw e}
+    }else ans=offlineAnswer(text);
+  }catch(e){ans=(e&&e.message)||'Не получилось ответить.';err=true}
+  CHAT=CHAT.filter(function(m){return !m.pending});CHAT.push({r:'a',t:ans,err:err||undefined});chatSave();
+  chatBusy=false;$('#chat-send').disabled=false;renderChat();
+  setTimeout(function(){window.scrollTo(0,document.body.scrollHeight)},30);
+}
+$('#composer').addEventListener('submit',function(e){e.preventDefault();var v=$('#chat-in').value;$('#chat-in').value='';sendChat(v)});
+$('#chat-in').addEventListener('focus',function(){document.body.classList.add('kb')});
+$('#chat-in').addEventListener('blur',function(){setTimeout(function(){if(document.activeElement!==$('#chat-in'))document.body.classList.remove('kb')},350)});
+['mousedown'].forEach(function(ev){$('#chat-send').addEventListener(ev,function(e){e.preventDefault()},{passive:false})});
+$('#chat-send').addEventListener('click',function(e){e.preventDefault();var v=$('#chat-in').value;if(!v.trim())return;$('#chat-in').value='';sendChat(v)});
+$('#chat-chips').addEventListener('click',function(e){var b=e.target.closest('[data-q]');if(b)sendChat(CHIPS[+b.dataset.q])});
+$('#chat-clear').onclick=function(){CHAT=[];chatSave();renderChat()};
+$('#ai-save').onclick=function(){var k=$('#ai-key').value.trim();if(!/^sk-ant-/.test(k)){toast('Ключ должен начинаться с sk-ant-');return}try{localStorage.setItem('midas.aikey',k)}catch(e){toast('Не удалось сохранить ключ');return}$('#ai-key').value='';aiUI();toast('Ключ сохранён')};
+$('#ai-del').onclick=function(){try{localStorage.removeItem('midas.aikey')}catch(e){}$('#ai-key').value='';aiUI();toast('Ключ удалён')};
+$('#ai-model').addEventListener('change',function(){try{localStorage.setItem('midas.aimodel',this.value)}catch(e){}aiUI()});
+window.MIDAS_DEBUG2={offlineAnswer:offlineAnswer,runTool:runTool,sendChat:sendChat};
 
 /* ---------- подсказка про экран «Домой» ---------- */
 (function(){
