@@ -157,6 +157,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
     <div class="card"><h3>По месяцам</h3><div class="bars" id="bars"></div><div class="mlabels" id="mlabels"></div><div class="sub">Нажмите на столбец, чтобы выбрать месяц</div></div>
     <div class="card" id="compare"></div>
     <div class="card"><div class="donut" id="donut"></div><div id="legend"></div></div>
+    <div class="card" id="yearcard"></div>
   </div>
 
   <div class="view" id="v-subs" hidden>
@@ -487,8 +488,31 @@ function render(){
 
 function monthSums(all,m){var o={},t=0;all.forEach(function(e){if(e.type!=='out'||!e.cat||mk(e.d)!==m)return;o[e.cat]=(o[e.cat]||0)+e.a;t+=e.a});return {o:o,t:t}}
 function pctTxt(a,b){if(b>0){var p=Math.round((a-b)/b*100);return (p>0?'+':p<0?'−':'')+Math.abs(p)+'%'}return a>0?'новое':'—'}
+var selYear=NOW.getFullYear();
+function renderYear(all){
+  var y=selYear,out=all.filter(function(e){return e.type==='out'&&e.d.getFullYear()===y});
+  var tot=sum(out),h='<div class="row"><button class="ghost" type="button" data-year="-1" aria-label="Предыдущий год" style="width:44px;padding:8px">‹</button><h3 class="grow" style="text-align:center;margin:0">Итоги '+y+' года</h3><button class="ghost" type="button" data-year="1" aria-label="Следующий год" style="width:44px;padding:8px"'+(y>=NOW.getFullYear()?' disabled':'')+'>›</button></div>';
+  if(!out.length){$('#yearcard').innerHTML=h+'<div class="muted" style="padding-top:10px">За '+y+' год расходов нет.</div>';return}
+  var mo={},cat={},mer={},big=out[0],act=0;
+  out.forEach(function(e){var m=e.d.getMonth();mo[m]=(mo[m]||0)+e.a;var c=e.cat||'Без категории';cat[c]=(cat[c]||0)+e.a;var k=e.m||'—';var x=mer[k]||(mer[k]={t:0,n:0});x.t+=e.a;x.n++;if(e.a>big.a)big=e;});
+  var last=y===NOW.getFullYear()?NOW.getMonth()+1:12,first=Math.min.apply(null,Object.keys(mo).map(Number)),span=Math.max(1,last-first);
+  h+='<div class="big" style="font-size:34px;padding-top:8px">'+fmt(tot)+'</div><div class="sub">Всего потрачено · записей: '+out.length+'</div>';
+  h+='<div class="sub">В среднем <b>'+fmt(tot/span)+'</b> в месяц'+(span<12?' (с первой записи)':'')+'</div>';
+  var prev=sum(all.filter(function(e){return e.type==='out'&&e.d.getFullYear()===y-1}));
+  if(prev>0)h+='<div class="sub">Год назад: '+fmt(prev)+' · <span class="'+(tot>prev?'neg':'pos')+'">'+pctTxt(tot,prev)+'</span></div>';
+  if(S.income){var inc=sum(all.filter(function(e){return e.type==='in'&&e.d.getFullYear()===y}));h+='<div class="row" style="padding-top:8px;gap:28px"><div><div class="sub">Доход</div><div class="num pos">+'+fmt(inc)+'</div></div><div><div class="sub">Остаток</div><div class="num '+(inc-tot>=0?'pos':'neg')+'">'+fmt(inc-tot)+'</div></div></div>'}
+  var ml=Object.keys(mo).map(Number).sort(function(a,b){return mo[b]-mo[a]}),mmx=mo[ml[0]];
+  h+='<h3 style="padding-top:14px">Самые дорогие месяцы</h3>'+ml.slice(0,3).map(function(m,i){return '<div class="row" style="padding:4px 0"><span class="muted" style="width:18px">'+(i+1)+'</span><span style="width:52px">'+MONTHS[m]+'</span><span class="grow" style="height:8px;border-radius:4px;background:var(--card2)"><i style="display:block;height:100%;border-radius:4px;background:var(--accent);width:'+Math.round(mo[m]/mmx*100)+'%"></i></span><span class="num">'+fmt(mo[m])+'</span></div>'}).join('');
+  if(ml.length>1){var lo=ml[ml.length-1];h+='<div class="sub">Самый экономный: '+MONTHS[lo]+' ('+fmt(mo[lo])+')</div>'}
+  var ck=Object.keys(cat).sort(function(a,b){return cat[b]-cat[a]});
+  h+='<h3 style="padding-top:14px">Куда уходит больше всего</h3>'+ck.slice(0,6).map(function(k){var c=catOf(k)||CATS[7],pc=Math.round(cat[k]/tot*100);return '<div style="padding:5px 0"><div class="row"><span class="grow">'+c.e+' '+esc(k)+'</span><span class="muted">'+pc+'%</span><span class="num">'+fmt(cat[k])+'</span></div><div style="height:6px;border-radius:3px;background:var(--card2);margin-top:4px"><i style="display:block;height:100%;border-radius:3px;background:'+c.c+';width:'+pc+'%"></i></div></div>'}).join('');
+  var mk2=Object.keys(mer).sort(function(a,b){return mer[b].t-mer[a].t}).slice(0,5);
+  h+='<h3 style="padding-top:14px">Топ магазинов</h3>'+mk2.map(function(k){return '<div class="row" style="padding:3px 0"><span class="grow">'+esc(k)+' <span class="muted">×'+mer[k].n+'</span></span><span class="num">'+fmt(mer[k].t)+'</span></div>'}).join('');
+  h+='<h3 style="padding-top:14px">Самая крупная трата</h3><div class="row"><span class="grow">'+esc(big.m)+'<span class="sub"> · '+big.d.getDate()+' '+MONTHS[big.d.getMonth()]+'</span></span><span class="num">'+fmt(big.a)+'</span></div>';
+  $('#yearcard').innerHTML=h;
+}
 function renderReports(all){
-  all=all||list();
+  all=all||list();renderYear(all);
   var base=mk(NOW),ms=[];for(var i=5;i>=0;i--)ms.push(base-i);
   var vals=ms.map(function(m){return sum(all.filter(function(e){return e.type==='out'&&mk(e.d)===m}))});
   var mx=Math.max.apply(null,vals.concat([1]));
@@ -541,6 +565,7 @@ document.addEventListener('click',function(ev){
   if(t.dataset.tab)setTab(t.dataset.tab);
   if(t.dataset.period){period=t.dataset.period;render()}
   if(t.dataset.month){selMonth=+t.dataset.month;renderReports()}
+  if(t.dataset.year){var ny=selYear+(+t.dataset.year);if(ny<=NOW.getFullYear()&&ny>=2000){selYear=ny;renderReports()}}
   if(t.dataset.tag){q=t.dataset.tag;$('#q').value=q;renderSearch()}
   if(t.dataset.preset){var pr=PRESETS[+t.dataset.preset];if(pr)openSub({m:pr.m,ic:pr.ic,img:pr.img,cat:pr.cat})}
   if(t.dataset.subedit){var rr=S.rec.find(function(x){return x.id===t.dataset.subedit});if(rr)openSub({id:rr.id,m:rr.m,a:rr.a,cur:rr.cur,cat:rr.cat,per:rr.per,type:rr.type,ic:rr.ic,img:rr.img,date:nextCharge(rr)})}
