@@ -54,7 +54,7 @@ h1.t{font-size:34px;margin:6px 0 0;letter-spacing:-.01em}
 select.pick{background:var(--card2);color:var(--accent);border:0;border-radius:999px;padding:8px 10px;font-size:14px;max-width:150px}
 .fab{position:fixed;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 92px);width:66px;height:66px;border-radius:50%;background:var(--accent);color:var(--on);display:grid;place-items:center;z-index:20;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;gap:2px;background:rgba(37,41,48,.96);border-radius:999px;padding:6px;z-index:20;box-shadow:0 6px 22px rgba(0,0,0,.35)}
-.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 22px;border-radius:999px;font-size:11px;color:var(--muted)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 15px;border-radius:999px;font-size:11px;color:var(--muted)}
 .tabs button span.i{font-size:20px;line-height:1}
 .tabs button[aria-current="true"]{background:var(--bg);color:var(--fg)}
 .search,.inp{background:var(--card);border:0;border-radius:999px;padding:14px 18px;outline:none;width:100%}
@@ -99,6 +99,11 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
 .irow b{display:block;font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cmp-row{display:flex;align-items:center;gap:10px;padding:2px 0}
 .tags{display:flex;gap:8px;flex-wrap:wrap}
+.inp[type=date]{width:auto;min-width:0;text-align:right;color-scheme:dark;padding:8px 0}
+.tagchip{cursor:pointer}
+.card .tagchip{background:var(--card2);color:var(--fg)}
+.irow .item .sub{white-space:normal}
+.tagchip:active{background:var(--card2)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -140,6 +145,18 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
     <div class="card"><div class="donut" id="donut"></div><div id="legend"></div></div>
   </div>
 
+  <div class="view" id="v-subs" hidden>
+    <div style="text-align:center;font-weight:700;padding-top:6px">Подписки</div>
+    <div class="card"><div class="muted">Подписки в месяц</div><div class="big" id="subs-m"></div><div class="sub" id="subs-y"></div></div>
+    <div class="card">
+      <h3>Мои подписки</h3>
+      <div id="subs-list"></div>
+      <div class="sub">Запись появляется сама в день списания, когда вы открываете MIDAS. Если вы не открывали приложение, пропущенные списания добавятся задним числом с правильными датами.</div>
+    </div>
+    <div class="card"><h3>Быстро добавить</h3><div class="tags" id="subs-presets"></div></div>
+    <button class="cta" id="sub-add" type="button">＋ &nbsp;Добавить подписку</button>
+  </div>
+
   <div class="view" id="v-search" hidden>
     <div style="text-align:center;font-weight:700;padding-top:6px">Поиск</div>
     <input class="search" id="q" placeholder="Магазин, категория, заметка или #тег" aria-label="Поиск">
@@ -156,6 +173,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
 <nav class="tabs" id="tabs">
   <button type="button" data-tab="home" aria-current="true"><span class="i">⌂</span><span>Главная</span></button>
   <button type="button" data-tab="rep"><span class="i">▥</span><span>Отчёты</span></button>
+  <button type="button" data-tab="subs"><span class="i">↻</span><span>Подписки</span></button>
   <button type="button" data-tab="search"><span class="i">⌕</span><span>Поиск</span></button>
 </nav>
 
@@ -165,12 +183,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
   <header><span style="width:78px"></span><span>Настройки</span><button type="button" id="set-done">Готово</button></header>
   <div class="body">
     <div class="card"><div class="row"><span class="grow">⊕ &nbsp;Доходы</span><button class="sw" id="set-income" role="switch" aria-checked="false" aria-label="Доходы" type="button"></button></div><div class="sub">Включите, чтобы вести доходы и видеть баланс.</div></div>
-    <div class="card">
-      <h3>🔁 Повторяющиеся платежи</h3>
-      <div class="sub">Подписки, аренда, интернет. Запись появляется в нужный день, когда вы открываете MIDAS (если день пропущен, запись добавится при следующем открытии).</div>
-      <div id="rec-list"></div>
-      <button class="ghost" id="rec-add" type="button">Добавить платёж</button>
-    </div>
+    <div class="card"><div class="row"><span class="grow">↻ &nbsp;Подписки и регулярные платежи</span><button class="ghost" id="set-subs" type="button" style="width:auto;padding:10px 16px">Открыть</button></div></div>
     <div class="card">
       <h3>💳 Apple Pay</h3>
       <div class="sub">После оплаты откроется MIDAS с суммой и магазином, останется нажать на категорию.</div>
@@ -197,7 +210,7 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
       <div class="row"><button class="ghost" id="bk-make" type="button">Показать копию</button><button class="ghost" id="bk-copy" type="button">Копировать</button></div>
       <button class="ghost" id="bk-restore" type="button">Восстановить из текста выше</button>
     </div>
-    <div class="card"><div class="row"><span class="grow">Версия</span><span class="muted">2.0</span></div></div>
+    <div class="card"><div class="row"><span class="grow">Версия</span><span class="muted">2.1</span></div></div>
     <button class="ghost danger" id="set-clear" type="button">🗑 &nbsp;Очистить историю</button>
     <div class="card" id="clear-confirm" hidden><b>Удалить все записи?</b><div class="sub">Повторяющиеся платежи останутся. Отменить нельзя.</div><div class="row"><button class="ghost" id="clear-no" type="button">Отмена</button><button class="ghost danger" id="clear-yes" type="button">Удалить</button></div></div>
   </div>
@@ -222,6 +235,25 @@ textarea.bk{width:100%;height:100px;background:#101215;border:1px solid var(--li
     </div>
     <button class="cta" id="pk-save" type="button" disabled>Сохранить</button>
     <button class="ghost danger" id="pk-del" type="button" hidden>Удалить запись</button>
+  </div>
+</section>
+
+<section class="sheet" id="sh-sub" aria-label="Подписка">
+  <header><button type="button" id="sb-cancel">Отмена</button><span id="sb-title">Новая подписка</span><span style="width:78px"></span></header>
+  <div class="body">
+    <div class="seg" id="sb-type" hidden><button type="button" data-t="out" aria-pressed="true">Расход</button><button type="button" data-t="in" aria-pressed="false">Доход</button></div>
+    <div class="card">
+      <input class="inp" id="sb-m" placeholder="Название, например Spotify" aria-label="Название" autocomplete="off">
+      <div class="row"><input class="inp amt" id="sb-a" inputmode="decimal" placeholder="0,00" aria-label="Сумма" autocomplete="off"><button class="pill" type="button" id="sb-sym" style="font-size:24px;font-weight:700;padding:8px 16px" aria-label="Валюта">₴</button></div>
+    </div>
+    <div class="card">
+      <div class="seg" id="sb-per"><button type="button" data-p="m" aria-pressed="true">Каждый месяц</button><button type="button" data-p="y" aria-pressed="false">Каждый год</button></div>
+      <div class="row"><span class="grow" id="sb-date-l">Дата первого списания</span><input class="inp" id="sb-date" type="date" aria-label="Дата списания"></div>
+      <div class="sub" id="sb-hint"></div>
+    </div>
+    <div class="card"><h3>Категория</h3><div class="cats" id="sb-cats"></div></div>
+    <button class="cta" id="sb-save" type="button" disabled>Сохранить подписку</button>
+    <button class="ghost danger" id="sb-del" type="button" hidden>Удалить подписку</button>
   </div>
 </section>
 
@@ -270,6 +302,7 @@ if(!S.cur)S.cur='UAH';
 if(!Array.isArray(S.rec))S.rec=[];
 S.income=!!S.income;
 S.ex.forEach(function(e){if(!e.cur)e.cur=S.cur;if(!e.type)e.type='out'});
+S.rec.forEach(function(r){if(!r.per)r.per='m';if(r.mon==null)r.mon=0});
 
 /* ---------- курсы (кэш в телефоне, обновление раз в 6 часов) ---------- */
 var RATES=null;
@@ -292,13 +325,16 @@ function list(){var d=S.cur||'UAH';return S.ex.map(function(e){var oc=e.cur||d,v
 function orig(e){return e.oc!==(S.cur||'UAH')?' · '+fmtIn(e.oa,e.oc):''}
 
 /* ---------- повторяющиеся платежи ---------- */
+function recDate(k,day){var y=Math.floor(k/12),mo=k%12,dim=new Date(y,mo+1,0).getDate();return new Date(y,mo,Math.min(day,dim),0,0)}
+function recHits(r,k){return !r.per||r.per==='m'||k%12===(r.mon||0)}
 function runRecurring(){
   var now=new Date(),curKey=mk(now),added=0;
   S.rec.forEach(function(r){
-    var from=(r.last!=null?r.last+1:r.startKey);if(from<curKey-24)from=curKey-24;
+    if(r.paused)return;
+    var from=Math.max(r.startKey,r.last!=null?r.last+1:r.startKey);if(from<curKey-24)from=curKey-24;
     for(var k=from;k<=curKey;k++){
-      var y=Math.floor(k/12),mo=k%12,dim=new Date(y,mo+1,0).getDate(),dt=new Date(y,mo,Math.min(r.day,dim),9,0);
-      if(dt>now)break;
+      if(!recHits(r,k))continue;
+      var dt=recDate(k,r.day);if(dt>now)break;
       S.ex.push({id:uid(),m:r.m,a:r.a,cur:r.cur,d:dt.toISOString(),n:1,cat:r.cat,src:'recurring',type:r.type||'out',note:r.note||'',recId:r.id});
       r.last=k;added++;
     }
@@ -306,12 +342,64 @@ function runRecurring(){
   if(added)save();
   return added;
 }
-function renderRec(){
-  $('#rec-list').innerHTML=S.rec.length?S.rec.map(function(r){var c=catOf(r.cat);return '<div class="row" style="padding:6px 0"><div class="ico" style="width:40px;height:40px;font-size:20px;background:'+(c?c.c+'33':'#3a3f46')+'">'+(c?c.e:'🔁')+'</div><div class="grow"><b style="display:block;font-size:15px">'+esc(r.m)+'</b><span class="sub">каждое '+r.day+'-е · '+(r.type==='in'?'+':'')+fmtIn(r.a,r.cur)+'</span></div><button type="button" class="muted" data-recdel="'+r.id+'" aria-label="Удалить платёж" style="padding:8px">✕</button></div>'}).join(''):'<div class="muted" style="font-size:14px">Пока нет. Добавьте, например, подписку или аренду.</div>';
+var PRESETS=[{m:'Spotify',ic:'🎵',cat:'Развлечения'},{m:'Netflix',ic:'🎬',cat:'Развлечения'},{m:'YouTube Premium',ic:'▶️',cat:'Развлечения'},{m:'iCloud',ic:'🍎',cat:'Другое'},{m:'Google One',ic:'☁️',cat:'Другое'},{m:'Telegram Premium',ic:'✈️',cat:'Другое'},{m:'Интернет',ic:'📶',cat:'Дом'},{m:'Телефон',ic:'📱',cat:'Дом'},{m:'Аренда',ic:'🏠',cat:'Дом'},{m:'Спортзал',ic:'🏋️',cat:'Здоровье'}];
+function perTxt(r){return r.per==='y'?'раз в год':'каждый месяц'}
+function nextCharge(r){
+  var from=Math.max(r.startKey,r.last!=null?r.last+1:r.startKey);
+  for(var k=from;k<from+36;k++){if(recHits(r,k))return recDate(k,r.day)}
+  return null;
+}
+function dayWord(d){
+  var t0=new Date();t0.setHours(0,0,0,0);var n=Math.round((d-t0)/864e5);
+  var s=d.getDate()+' '+MONTHS[d.getMonth()]+(d.getFullYear()!==t0.getFullYear()?' '+d.getFullYear():'');
+  return s+(n===0?' (сегодня)':n===1?' (завтра)':n>1&&n<=31?' (через '+n+' дн.)':'');
+}
+function monthlyEq(r){var v=r.per==='y'?r.a/12:r.a,c=convert(v,r.cur,S.cur||'UAH');return c===null?v:c}
+function renderSubs(){
+  var act=S.rec.filter(function(r){return !r.paused&&r.type!=='in'});
+  var m=act.reduce(function(s,r){return s+monthlyEq(r)},0);
+  $('#subs-m').textContent=fmt(m);
+  $('#subs-y').textContent='≈ '+fmt(m*12)+' в год · активных: '+act.length;
+  $('#subs-presets').innerHTML=PRESETS.map(function(p,i){return '<button class="tagchip" type="button" data-preset="'+i+'">'+p.ic+' '+esc(p.m)+'</button>'}).join('');
+  var L=S.rec.slice().sort(function(a,b){var na=nextCharge(a),nb=nextCharge(b);return (a.paused?1:0)-(b.paused?1:0)||(na&&nb?na-nb:0)});
+  $('#subs-list').innerHTML=L.length?L.map(function(r){
+    var c=catOf(r.cat),nx=nextCharge(r);
+    return '<div class="row irow"><button class="item" type="button" data-subedit="'+r.id+'" style="flex:1;min-width:0;width:auto;opacity:'+(r.paused?.5:1)+'"><div class="ico" style="width:44px;height:44px;font-size:22px;background:'+(c?c.c+'33':'#3a3f46')+'">'+(r.ic||(c?c.e:'🔁'))+'</div><div class="grow"><b>'+esc(r.m)+'</b><span class="sub">'+(r.paused?'Приостановлена':'Дальше: '+(nx?dayWord(nx):'—'))+' · '+perTxt(r)+'</span></div><span class="num'+(r.type==='in'?' pos':'')+'">'+(r.type==='in'?'+':'')+fmtIn(r.a,r.cur)+'</span></button><button class="sw" type="button" role="switch" data-subpause="'+r.id+'" aria-checked="'+(!r.paused)+'" aria-label="Подписка активна"></button></div>';
+  }).join(''):'<div class="muted">Пока нет подписок. Нажмите на сервис ниже или «Добавить подписку».</div>';
+}
+function dIn(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function parseD(s){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?new Date(+m[1],+m[2]-1,+m[3]):null}
+function sbAmt(){var v=parseFloat($('#sb-a').value.replace(/\s/g,'').replace(',','.'));return isFinite(v)&&v>0?v:null}
+function sbDrawCats(){$('#sb-cats').innerHTML=(sb&&sb.type==='in'?INCATS:CATS).map(function(c){return '<button type="button" data-sc="'+esc(c.n)+'" style="--c:'+c.c+'" aria-pressed="'+(sb&&sb.cat===c.n)+'"><span>'+c.e+'</span><span>'+c.n+'</span></button>'}).join('')}
+function sbCheck(){$('#sb-save').disabled=!(sbAmt()&&sb&&sb.cat&&parseD($('#sb-date').value))}
+function sbHint(){
+  if(!sb)return;var d=parseD($('#sb-date').value),h='';
+  if(sb.id){h='Изменения действуют на следующие списания. Уже записанное не меняется.'}
+  else if(d){
+    var tmp={per:sb.per,mon:d.getMonth(),day:d.getDate(),startKey:mk(d),last:null},now=new Date(),n=0;
+    for(var k=Math.max(tmp.startKey,mk(now)-24);k<=mk(now);k++){if(recHits(tmp,k)&&recDate(k,tmp.day)<=now)n++}
+    h=n>1?'Прошедших списаний: '+n+'. Они сразу попадут в историю, дальше записи будут добавляться сами.':n===1?'Это списание уже наступило, оно сразу попадёт в историю. Дальше записи будут добавляться сами.':'Запись появится сама в этот день, когда вы откроете MIDAS.';
+  }
+  $('#sb-hint').textContent=h;
+}
+function openSub(o){
+  o=o||{};
+  sb={id:o.id||null,cat:o.cat||null,cur:o.cur||S.cur||'UAH',per:o.per||'m',type:o.type||'out',ic:o.ic||null};
+  $('#sb-title').textContent=o.id?'Изменить подписку':'Новая подписка';
+  $('#sb-m').value=o.m||'';
+  $('#sb-a').value=o.a?String(Number(o.a).toFixed(2)).replace('.',','):'';
+  $('#sb-sym').textContent=symOf(sb.cur);
+  $('#sb-type').hidden=!S.income;
+  $('#sb-type').querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.t===sb.type)});
+  $('#sb-per').querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.p===sb.per)});
+  $('#sb-date').value=dIn(o.date||new Date());
+  $('#sb-date-l').textContent=o.id?'Следующее списание':'Дата первого списания';
+  $('#sb-del').hidden=!o.id;
+  sbDrawCats();sbCheck();sbHint();sheet('#sh-sub',true);
 }
 
 /* ---------- состояние экрана ---------- */
-var period='this',tab='home',selMonth=mk(NOW),q='',pk=null;
+var period='this',tab='home',selMonth=mk(NOW),q='',pk=null,sb=null;
 function inPeriod(e){
   if(period==='all')return true;
   if(period==='this')return mk(e.d)===mk(NOW);
@@ -321,7 +409,7 @@ function inPeriod(e){
 function ico(c,size){return '<div class="ico" style="'+(size?'width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*.48)+'px;':'')+'background:'+(c?c.c+'33':'#3a3f46')+'">'+(c?c.e:'❓')+'</div>'}
 function rowHtml(e,withN){
   var c=e.cat?catOf(e.cat):null;
-  var meta=dstr(e.d)+(withN?' · '+e.n+' поз.':'')+orig(e)+(e.note?' · '+esc(e.note):'');
+  var meta=dstr(e.d)+(withN&&e.src!=='recurring'?' · '+e.n+' поз.':'')+(e.src==='recurring'?' · подписка':'')+orig(e)+(e.note?' · '+esc(e.note):'');
   return '<button class="item" type="button" data-edit="'+e.id+'">'+ico(c,withN?50:44)+'<div class="grow"><b>'+esc(e.m)+'</b><span class="sub">'+meta+'</span></div><span class="num'+(e.type==='in'?' pos':'')+'">'+(e.type==='in'?'+':'')+fmt(e.a)+'</span></button>';
 }
 
@@ -347,7 +435,7 @@ function render(){
   var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a]});
   $('#bycat').innerHTML='<h3>По категориям</h3>'+(keys.length?keys.map(function(k){var c=catOf(k)||CATS[7];return '<div><div class="row"><span class="grow">'+c.e+' '+esc(k)+'</span><span class="num">'+fmt(sums[k])+'</span></div><div class="bar"><i style="width:'+(total?sums[k]/total*100:0)+'%;background:'+c.c+'"></i></div></div>'}).join(''):'<div class="muted">Пока пусто. Нажмите «Добавить» или кнопку сканера.</div>');
   $('#buys').innerHTML='<h3>'+(S.income?'Операции':'Покупки')+' · '+ex.length+'</h3>'+(ex.length?ex.map(function(e){return rowHtml(e,true)}).join(''):'<div class="muted">За этот период ничего нет</div>');
-  renderReports(all);renderSearch(all);renderRec();
+  renderReports(all);renderSearch(all);renderSubs();
 }
 
 function monthSums(all,m){var o={},t=0;all.forEach(function(e){if(e.type!=='out'||!e.cat||mk(e.d)!==m)return;o[e.cat]=(o[e.cat]||0)+e.a;t+=e.a});return {o:o,t:t}}
@@ -397,9 +485,9 @@ function renderSearch(all){
 
 /* ---------- навигация и события ---------- */
 function setTab(t){
-  tab=t;['home','rep','search'].forEach(function(v){$('#v-'+v).hidden=v!==t});
+  tab=t;['home','rep','subs','search'].forEach(function(v){$('#v-'+v).hidden=v!==t});
   document.querySelectorAll('#tabs button').forEach(function(b){b.setAttribute('aria-current',b.dataset.tab===t)});
-  $('#fab').hidden=t==='search';window.scrollTo(0,0);
+  $('#fab').hidden=t==='search'||t==='subs';window.scrollTo(0,0);
 }
 document.addEventListener('click',function(ev){
   var t=ev.target.closest('button');if(!t)return;
@@ -407,7 +495,9 @@ document.addEventListener('click',function(ev){
   if(t.dataset.period){period=t.dataset.period;render()}
   if(t.dataset.month){selMonth=+t.dataset.month;renderReports()}
   if(t.dataset.tag){q=t.dataset.tag;$('#q').value=q;renderSearch()}
-  if(t.dataset.recdel){S.rec=S.rec.filter(function(r){return r.id!==t.dataset.recdel});save();renderRec();toast('Платёж удалён. Уже добавленные записи остались.')}
+  if(t.dataset.preset){var pr=PRESETS[+t.dataset.preset];if(pr)openSub({m:pr.m,ic:pr.ic,cat:pr.cat})}
+  if(t.dataset.subedit){var rr=S.rec.find(function(x){return x.id===t.dataset.subedit});if(rr)openSub({id:rr.id,m:rr.m,a:rr.a,cur:rr.cur,cat:rr.cat,per:rr.per,type:rr.type,ic:rr.ic,date:nextCharge(rr)})}
+  if(t.dataset.subpause){var pp=S.rec.find(function(x){return x.id===t.dataset.subpause});if(pp){pp.paused=!pp.paused;if(!pp.paused){var nw=new Date(),ck=mk(nw);pp.last=recDate(ck,pp.day)<=nw?ck:ck-1}save();render();toast(pp.paused?'Подписка приостановлена':'Подписка снова активна')}}
   if(t.dataset.edit){var e=list().find(function(x){return x.id===t.dataset.edit});if(e)openPicker({id:e.id,m:e.m,a:e.oa,cur:e.oc,n:e.n,cat:e.cat,src:e.src,d:e.d,type:e.type,note:e.note})}
 });
 document.addEventListener('change',function(ev){
@@ -423,7 +513,7 @@ function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearT
 
 /* ---------- листы ---------- */
 function sheet(id,on){$(id).classList.toggle('on',on);$('#dim').classList.toggle('on',!!document.querySelector('.sheet.on'))}
-function closeAll(){document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('on')});$('#dim').classList.remove('on');$('#clear-confirm').hidden=true;pk=null}
+function closeAll(){document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('on')});$('#dim').classList.remove('on');$('#clear-confirm').hidden=true;pk=null;sb=null}
 function closePicker(){sheet('#sh-pick',false);pk=null}
 $('#dim').onclick=closeAll;$('#set-done').onclick=closeAll;$('#pk-cancel').onclick=closePicker;
 
@@ -486,10 +576,33 @@ $('#pk-del').onclick=function(){if(!pk||!pk.id)return;S.ex=S.ex.filter(function(
 
 /* ---------- настройки ---------- */
 var payUrl=location.origin+location.pathname+'?amount=СУММА&merchant=МАГАЗИН';
-$('#open-settings').onclick=function(){$('#pay-link').textContent=payUrl;updRatesUI();renderRec();sheet('#sh-set',true)};
+$('#open-settings').onclick=function(){$('#pay-link').textContent=payUrl;updRatesUI();sheet('#sh-set',true)};
 $('#rates-refresh').onclick=function(){fetchRates(true)};
 $('#set-income').onclick=function(){S.income=!S.income;save();render()};
-$('#rec-add').onclick=function(){openPicker({rec:true,m:'',a:0,n:1,src:'recurring'})};
+$('#set-subs').onclick=function(){closeAll();setTab('subs')};
+$('#sub-add').onclick=function(){openSub()};
+$('#sb-cancel').onclick=function(){sheet('#sh-sub',false);sb=null};
+$('#sb-cats').addEventListener('click',function(e){var b=e.target.closest('[data-sc]');if(!b||!sb)return;sb.cat=b.dataset.sc;sbDrawCats();sbCheck()});
+$('#sb-type').addEventListener('click',function(e){var b=e.target.closest('[data-t]');if(!b||!sb)return;sb.type=b.dataset.t;sb.cat=null;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.t===sb.type)});sbDrawCats();sbCheck()});
+$('#sb-per').addEventListener('click',function(e){var b=e.target.closest('[data-p]');if(!b||!sb)return;sb.per=b.dataset.p;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.p===sb.per)});sbHint()});
+$('#sb-a').addEventListener('input',sbCheck);
+$('#sb-date').addEventListener('input',function(){sbCheck();sbHint()});
+$('#sb-date').addEventListener('change',function(){sbCheck();sbHint()});
+$('#sb-sym').onclick=function(){curMode='sub';openCur()};
+$('#sb-save').onclick=function(){
+  if(!sb)return;var a=sbAmt(),d=parseD($('#sb-date').value);if(!a||!sb.cat||!d)return;
+  var m=$('#sb-m').value.trim()||'Подписка',n=0;
+  if(sb.id){
+    var r=S.rec.find(function(x){return x.id===sb.id});
+    if(r){r.m=m;r.a=a;r.cur=sb.cur;r.cat=sb.cat;r.type=sb.type;r.per=sb.per;r.day=d.getDate();r.mon=d.getMonth();r.startKey=mk(d)}
+  }else S.rec.push({id:uid(),m:m,a:a,cur:sb.cur,cat:sb.cat,type:sb.type,per:sb.per,day:d.getDate(),mon:d.getMonth(),startKey:mk(d),last:null,note:'',ic:sb.ic,paused:false});
+  save();n=runRecurring();sheet('#sh-sub',false);sb=null;render();
+  toast(n?'Подписка сохранена. Записей добавлено: '+n:'Подписка сохранена. Запись появится сама в день списания');
+};
+$('#sb-del').onclick=function(){
+  if(!sb||!sb.id)return;var id=sb.id;S.rec=S.rec.filter(function(r){return r.id!==id});
+  save();sheet('#sh-sub',false);sb=null;render();toast('Подписка удалена. Уже добавленные записи остались.');
+};
 function copyText(t,okMsg){
   function fb(){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);toast(ok?okMsg:'Выделите текст и скопируйте вручную')}
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(function(){toast(okMsg)},fb);else fb();
@@ -503,7 +616,7 @@ $('#bk-restore').onclick=function(){
     var dc=r.cur||S.cur||'UAH';
     S={v:2,cur:dc,income:!!r.income,
       ex:r.ex.filter(function(e){return e&&e.id&&e.a>0&&e.d}).map(function(e){return {id:String(e.id),m:String(e.m||'Без названия'),a:+e.a,cur:e.cur||dc,d:String(e.d),n:+e.n||1,cat:e.cat||null,src:e.src||'manual',type:e.type==='in'?'in':'out',note:String(e.note||''),rid:e.rid,recId:e.recId}}),
-      rec:(Array.isArray(r.rec)?r.rec:[]).filter(function(x){return x&&x.id&&x.a>0}).map(function(x){return {id:String(x.id),m:String(x.m||'Платёж'),a:+x.a,cur:x.cur||dc,cat:x.cat||null,type:x.type==='in'?'in':'out',day:Math.min(31,Math.max(1,+x.day||1)),note:String(x.note||''),startKey:+x.startKey||mk(NOW),last:x.last==null?null:+x.last}})};
+      rec:(Array.isArray(r.rec)?r.rec:[]).filter(function(x){return x&&x.id&&x.a>0}).map(function(x){return {id:String(x.id),m:String(x.m||'Платёж'),a:+x.a,cur:x.cur||dc,cat:x.cat||null,type:x.type==='in'?'in':'out',day:Math.min(31,Math.max(1,+x.day||1)),note:String(x.note||''),startKey:+x.startKey||mk(NOW),last:x.last==null?null:+x.last,per:x.per==='y'?'y':'m',mon:+x.mon||0,paused:!!x.paused,ic:x.ic||null}})};
     save();render();toast('Восстановлено: '+S.ex.length+' записей');
   }catch(e){toast('Это не похоже на копию MIDAS')}
 };
@@ -525,7 +638,7 @@ function curList(){
 function renderCur(){
   var t=$('#cur-q').value.trim().toLowerCase();
   var r=curList().filter(function(x){return !t||x.c.toLowerCase().indexOf(t)>-1||x.n.toLowerCase().indexOf(t)>-1});
-  var curNow=(curMode==='expense'&&pk)?pk.cur:(S.cur||'UAH');
+  var curNow=(curMode==='expense'&&pk)?pk.cur:(curMode==='sub'&&sb)?sb.cur:(S.cur||'UAH');
   $('#cur-list').innerHTML=r.length?r.map(function(x){return '<button class="item" type="button" data-cur="'+x.c+'" style="padding:8px 0"><span class="num" style="width:48px">'+x.c+'</span><span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.n)+'</span><span style="color:var(--accent)">'+(x.c===curNow?'✓':'')+'</span></button>'}).join(''):'<div class="muted">Такой валюты нет</div>';
 }
 function openCur(){
@@ -535,10 +648,11 @@ function openCur(){
 }
 $('#open-cur').onclick=function(){curMode='display';openCur()};
 $('#pk-sym').onclick=function(){curMode='expense';openCur()};
-$('#cur-done').onclick=function(){if(curMode==='expense')sheet('#sh-cur',false);else closeAll()};
+$('#cur-done').onclick=function(){if(curMode!=='display')sheet('#sh-cur',false);else closeAll()};
 $('#cur-q').oninput=renderCur;
 $('#cur-list').addEventListener('click',function(e){
   var b=e.target.closest('[data-cur]');if(!b)return;
+  if(curMode==='sub'&&sb){sb.cur=b.dataset.cur;$('#sb-sym').textContent=symOf(sb.cur);sheet('#sh-cur',false);return}
   if(curMode==='expense'&&pk){pk.cur=b.dataset.cur;$('#pk-sym').textContent=symOf(pk.cur);sheet('#sh-cur',false);drawItems();return}
   S.cur=b.dataset.cur;save();render();closeAll();toast('Валюта: '+S.cur);
 });
@@ -620,7 +734,8 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 window.MIDAS_DEBUG={parseReceipt:parseReceipt,openPicker:openPicker,runRecurring:runRecurring};
 var recAdded=runRecurring();
 setTab('home');render();fetchRates();
-if(recAdded)toast('Добавлено повторяющихся платежей: '+recAdded);
+if(recAdded)toast('По подпискам добавлено записей: '+recAdded);
+document.addEventListener('visibilitychange',function(){if(document.hidden)return;NOW=new Date();var n=runRecurring();render();if(n)toast('По подпискам добавлено записей: '+n)});
 })();
 </script>
 </body>
